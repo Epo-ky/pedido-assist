@@ -93,6 +93,12 @@ Não invente problemas: registre só o que aconteceu de fato.
 - O que deu errado no caminho (resumo do diário)
 - Como rodar local (`docker compose up`, `npm run db:seed`, `npm run dev`)
 
+## Idioma
+- **Português**: produto (telas, botões, erros, system prompt do assistente, dados do seed),
+  README, `docs/DIARIO.md`, commits, e nomes de domínio (tabelas, colunas, tools como `listar_pedidos`).
+- **Inglês**: nomes de variáveis, funções e arquivos de código novos (ex.: `getOrders`, `session.ts`)
+  e o que o ecossistema impõe (`package.json`, `page.tsx`).
+
 ## Convenções
 - Commits pequenos, em português, no formato `feat: ...`, `fix: ...`, `test: ...`, `docs: ...`
 - Nunca commitar `.env`; manter `.env.example` atualizado
