@@ -1,0 +1,91 @@
+.pagina {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.cartao {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 40px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 15%, transparent);
+  border-radius: 12px;
+}
+
+.titulo {
+  font-size: 1.5rem;
+}
+
+.subtitulo {
+  font-size: 0.95rem;
+  opacity: 0.7;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.campo input {
+  padding: 10px 12px;
+  font-size: 1rem;
+  color: inherit;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--foreground) 30%, transparent);
+  border-radius: 8px;
+}
+
+.campo input:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 1px;
+}
+
+.recuperar {
+  align-self: flex-end;
+  margin-top: -8px;
+  font-size: 0.85rem;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.criarConta {
+  padding: 11px 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid color-mix(in srgb, var(--foreground) 30%, transparent);
+  border-radius: 8px;
+}
+
+.criarConta:hover {
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+.erro {
+  min-height: 1.2em;
+  font-size: 0.9rem;
+  color: #d93025;
+}
+
+.cartao button {
+  padding: 11px 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--background);
+  background: var(--foreground);
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.cartao button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
