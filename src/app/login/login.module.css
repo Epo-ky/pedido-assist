@@ -55,7 +55,7 @@
   cursor: not-allowed;
 }
 
-.criarConta {
+.linkSecundario {
   padding: 11px 12px;
   font-size: 1rem;
   font-weight: 600;
@@ -64,7 +64,7 @@
   border-radius: 8px;
 }
 
-.criarConta:hover {
+.linkSecundario:hover {
   background: color-mix(in srgb, var(--foreground) 8%, transparent);
 }
 

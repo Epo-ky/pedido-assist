@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import styles from "./login.module.css";
+import styles from "../login/login.module.css";
 
-export default function LoginPage() {
+export default function CadastroPage() {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -13,15 +13,22 @@ export default function LoginPage() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErro(null);
-    setEnviando(true);
 
     const form = new FormData(event.currentTarget);
 
+    if (form.get("senha") !== form.get("confirmarSenha")) {
+      setErro("As senhas não são iguais.");
+      return;
+    }
+
+    setEnviando(true);
+
     try {
-      const resposta = await fetch("/api/login", {
+      const resposta = await fetch("/api/cadastro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          nome: form.get("nome"),
           email: form.get("email"),
           senha: form.get("senha"),
         }),
@@ -29,7 +36,7 @@ export default function LoginPage() {
 
       if (!resposta.ok) {
         const corpo = await resposta.json().catch(() => null);
-        setErro(corpo?.erro ?? "Não foi possível entrar. Tente novamente.");
+        setErro(corpo?.erro ?? "Não foi possível criar a conta. Tente novamente.");
         return;
       }
 
@@ -46,7 +53,19 @@ export default function LoginPage() {
     <main className={styles.pagina}>
       <form className={styles.cartao} onSubmit={handleSubmit}>
         <h1 className={styles.titulo}>Pedido Assist</h1>
-        <p className={styles.subtitulo}>Acesse sua conta</p>
+        <p className={styles.subtitulo}>Crie sua conta</p>
+
+        <label className={styles.campo}>
+          Nome
+          <input
+            name="nome"
+            type="text"
+            autoComplete="name"
+            required
+            minLength={2}
+            maxLength={80}
+          />
+        </label>
 
         <label className={styles.campo}>
           E-mail
@@ -60,33 +79,39 @@ export default function LoginPage() {
         </label>
 
         <label className={styles.campo}>
-          Senha
+          Senha (de 8 a 72 caracteres)
           <input
             name="senha"
             type="password"
-            autoComplete="current-password"
+            autoComplete="new-password"
             required
+            minLength={8}
+            maxLength={72}
           />
         </label>
 
-        <span
-          className={styles.recuperar}
-          aria-disabled="true"
-          title="Em breve"
-        >
-          Esqueci minha senha (em breve)
-        </span>
+        <label className={styles.campo}>
+          Confirmar senha
+          <input
+            name="confirmarSenha"
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            maxLength={72}
+          />
+        </label>
 
         <p className={styles.erro} role="alert">
           {erro}
         </p>
 
         <button type="submit" disabled={enviando}>
-          {enviando ? "Entrando..." : "Entrar"}
+          {enviando ? "Criando conta..." : "Criar conta"}
         </button>
 
-        <Link href="/cadastro" className={styles.linkSecundario}>
-          Criar conta
+        <Link href="/login" className={styles.linkSecundario}>
+          Já tenho conta
         </Link>
       </form>
     </main>
