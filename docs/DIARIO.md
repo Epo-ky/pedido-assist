@@ -65,3 +65,44 @@ Passo 3: Drizzle ORM e conexão com o banco em `src/lib/db/`.
 ### Decisões
 - Só segui o passo a passo; ainda estou confuso sobre o que tudo faz e o propósito final.
   Próxima sessão: reler o fluxo geral (cliente → chat → IA → tool → banco) antes de seguir para o Passo 4.
+
+## 2026-10-06 (noite) — Fase 1, passos 4 a 6, e Fase 2 (2a a 2g)
+
+### O que foi feito
+- Schema das 5 tabelas, migration `0000` aplicada e seed (3 clientes, 8 produtos de eletrônicos, 20 pedidos,
+  incluindo cancelados e enviados com entrega atrasada). README reescrito. Fase 1 concluída.
+- Fase 2: `jose` e `zod`, `SESSION_SECRET`, sessão por cookie JWT (`token.ts` e `session.ts`),
+  `POST /api/login`, `POST /api/logout`, tela de login em português, `proxy.ts`, página `/chat`
+  provisória com botão de sair e página inicial que redireciona.
+- Falta da Fase 2: cadastro de novos usuários (hoje o "Criar conta" leva a um 404).
+
+### O que deu errado
+- Um dos commits falhou: o `git add` apontou para um arquivo (`page.module.css`) que já tinha sido
+  removido do índice no commit anterior. Refeito sem esse caminho.
+- Falha breve de comunicação: eu achei que o projeto teria cadastro, e a conversa trouxe também a
+  recuperação de senha. Resultado: cadastro entrou na Fase 2 e recuperar senha virou bônus.
+- Alguns pontos estéticos do front me incomodaram (placeholder do e-mail, subtítulo, tamanho do card).
+  Ajustados; o nome do projeto e o fundo do site ficaram para depois.
+- No PowerShell, `curl` é apelido do `Invoke-WebRequest`; o certo é `curl.exe`.
+- O CLAUDE.md falava em "middleware", mas no Next 16 ele se chama `proxy`, e a documentação diz que
+  ele serve só para checagem otimista. Ajustado o desenho e o CLAUDE.md.
+
+### Como eu entendi (e correções)
+- Minhas palavras: "O proxy é o responsável pela ponte da aplicação com o banco geral e o setSession é o
+  que mantém as sessões ativas por determinado período, então em conjunto é a ponte de acesso e conexão
+  da aplicação."
+- Correção: o `proxy` não fala com o banco; ele só olha o cookie e redireciona quem não está logado
+  (o porteiro). Quem fala com o banco é o `db`. O `getSession()` lê o cookie e confere a assinatura para
+  descobrir quem é o cliente logado; o `createSession` é quem cria o cookie (válido por 7 dias).
+  Juntos: o `proxy` barra na entrada e o `getSession()` confere o crachá dentro de cada página.
+
+### Decisões
+- Nome: loja **Voltz** e assistente **Volt**; fundo com brilhos suaves + grade de pontos. Ainda a aplicar.
+- "Esqueci minha senha" fica visível, mas desativado ("em breve"), até a fase bônus.
+- Login devolve a mesma mensagem para e-mail inexistente e senha errada, com hash falso para igualar o tempo.
+- Sessão JWT sem estado: não dá para invalidar um token antes dos 7 dias de validade.
+- Limite de tentativas de login: pendente para a Fase 5.
+- Dinheiro como `numeric(10,2)` e somas em centavos no seed, para evitar erro de ponto flutuante.
+
+### Próximo
+Cadastro (2f); trocar o nome para Voltz e fazer o fundo; depois a Fase 3 (tools).

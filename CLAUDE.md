@@ -67,7 +67,7 @@ docs/
 
 ## Roteiro por fases
 1. **Setup**: Next.js + TS, Docker Compose com Postgres, Drizzle, migrations, seed. README inicial.
-2. **Auth**: login com usuário do seed, **cadastro de novos usuários**, cookie de sessão, middleware protegendo `/chat`.
+2. **Auth**: login com usuário do seed, **cadastro de novos usuários**, cookie de sessão, `proxy.ts` (o antigo middleware, no Next 16) redirecionando `/chat` + checagem real com `getSession()` no servidor.
 3. **Tools sem IA**: implementar as 3 tools + testes Vitest, incluindo o teste
    "cliente A não consegue ver pedido do cliente B" (passando id de pedido alheio).
 4. **IA**: rota `/api/chat` com loop de tool use + tela de chat simples (com streaming se der).
