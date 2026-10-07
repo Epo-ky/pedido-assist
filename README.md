@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pedido Assist
 
-## Getting Started
+Assistente de pedidos com IA para uma loja fictícia de eletrônicos. O cliente faz login e conversa com
+um assistente que responde dúvidas sobre **os próprios pedidos**, usando dados reais do PostgreSQL
+por meio de *function calling* (tool use) da Anthropic.
 
-First, run the development server:
+> **Status:** em construção. Hoje existem o banco (schema, migrations e seed) e a conexão com o Drizzle.
+> Login, tools e chat com IA estão nas próximas fases. Veja o roteiro em [CLAUDE.md](CLAUDE.md) e as
+> decisões e problemas reais em [docs/DIARIO.md](docs/DIARIO.md).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Stack
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Next.js (App Router) + TypeScript
+- PostgreSQL + Drizzle ORM (migrations e seed)
+- Anthropic SDK (tool use) — *fase 4*
+- Autenticação por cookie JWT assinado (`jose`) — *fase 2*
+- Vitest e GitHub Actions — *fases 3 e 7*
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Como rodar local
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Pré-requisitos: Node.js 20+ e PostgreSQL instalado (usei a versão 18, direto no Windows, sem Docker).
 
-## Learn More
+1. Instale as dependências:
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   npm install
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. Crie o banco `pedido_assist` no seu PostgreSQL.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. Copie `.env.example` para `.env` e preencha a senha do seu usuário do Postgres em `DATABASE_URL`.
 
-## Deploy on Vercel
+4. Crie as tabelas e popule com dados de exemplo:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   ```bash
+   npm run db:migrate
+   npm run db:seed
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+5. Confira a conexão com o banco (opcional) e inicie o servidor de desenvolvimento:
+
+   ```bash
+   npm run db:test
+   npm run dev
+   ```
+
+Abra http://localhost:3000.
+
+## Usuários de demonstração
+
+O seed cria 3 clientes, todos com a senha `senha123` (dados fictícios, só para o ambiente local):
+
+| Cliente | E-mail |
+|---|---|
+| Ana Souza | ana@exemplo.com |
+| Bruno Lima | bruno@exemplo.com |
+| Carla Mendes | carla@exemplo.com |
+
+## Scripts
+
+| Comando | O que faz |
+|---|---|
+| `npm run dev` | Servidor de desenvolvimento |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | Checagem de tipos (TypeScript) |
+| `npm run db:generate` | Gera uma migration a partir do `schema.ts` |
+| `npm run db:migrate` | Aplica as migrations no banco |
+| `npm run db:seed` | Apaga e recria os dados de exemplo |
+| `npm run db:test` | Testa a conexão com o banco |
+
+## Modelo de dados
+
+`clientes` → `pedidos` → `itens_pedido` → `produtos`, e `pedidos` → `entregas` (no máximo uma por pedido).
+O schema está em [`src/lib/db/schema.ts`](src/lib/db/schema.ts).
+
+## O que ainda vem
+
+Diagrama do fluxo (mensagem → LLM → tool → banco → resposta), como a segurança por cliente funciona e
+foi testada, resumo do que deu errado no caminho, print e link do deploy.
