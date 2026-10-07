@@ -106,3 +106,34 @@ Passo 3: Drizzle ORM e conexão com o banco em `src/lib/db/`.
 
 ### Próximo
 Cadastro (2f); trocar o nome para Voltz e fazer o fundo; depois a Fase 3 (tools).
+
+## 2026-10-07 — Fase 2: cadastro (2f) e fechamento da fase
+
+### O que foi feito
+- Rota `POST /api/cadastro` (validação com zod, hash com bcrypt, quem se cadastra já sai logado).
+- Tela `/cadastro` com confirmação de senha, reaproveitando o CSS do login. Testei no navegador e funcionou.
+- Fase 2 concluída: login, cadastro, sessão, rotas protegidas e sair.
+
+### O que deu errado
+- O `curl.exe` no PowerShell falhou com 400 ao mandar `"Seu Nome"`: o espaço quebrou o JSON em dois
+  pedaços. A rota estava certa (recusou o corpo inválido); no PowerShell é mais simples usar
+  `Invoke-RestMethod`.
+- Depois do teste do cadastro, a conta nova ficou com id 5 e não 4: o insert que falhou (e-mail
+  duplicado) já tinha gasto o id 4. A sequência do Postgres não volta atrás; o id só precisa ser único.
+
+### Decisões
+- Duplicidade de e-mail tratada pela constraint `UNIQUE` do banco (erro `23505` vira 409), e não por
+  uma consulta antes de inserir, para não haver corrida entre dois cadastros simultâneos.
+- Senha de 8 a 72 caracteres (o bcrypt só considera os 72 primeiros bytes).
+- Aceito que o 409 revele que um e-mail já está cadastrado; e-mail de confirmação fica para o bônus.
+
+### Próximos passos
+1. Trocar o nome para **Voltz** (loja) e **Volt** (assistente) em todo lugar (título, telas, README,
+   CLAUDE.md) e fazer o fundo com brilhos suaves + grade de pontos, respeitando "reduzir movimento".
+2. Atualizar o README: a Fase 2 existe (login e cadastro) e o nome mudou.
+3. **Fase 3**: instalar o Vitest e criar o script `npm test` (o CLAUDE.md exige antes de cada commit);
+   implementar `listar_pedidos`, `detalhe_pedido` e `rastrear_entrega`, sempre filtrando pelo cliente
+   da sessão, com argumentos validados por zod e limite de linhas; escrever o teste "cliente A não
+   consegue ver pedido do cliente B".
+4. Pendências menores: limite de tentativas de login (Fase 5), decidir o que fazer com a pasta
+   `Claudio/`, e rever as vulnerabilidades do `npm audit` (hoje só em ferramentas de desenvolvimento).
