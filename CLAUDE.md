@@ -67,7 +67,7 @@ docs/
 
 ## Roteiro por fases
 1. **Setup**: Next.js + TS, Docker Compose com Postgres, Drizzle, migrations, seed. README inicial.
-2. **Auth**: login com usuário do seed, cookie de sessão, middleware protegendo `/chat`.
+2. **Auth**: login com usuário do seed, **cadastro de novos usuários**, cookie de sessão, middleware protegendo `/chat`.
 3. **Tools sem IA**: implementar as 3 tools + testes Vitest, incluindo o teste
    "cliente A não consegue ver pedido do cliente B" (passando id de pedido alheio).
 4. **IA**: rota `/api/chat` com loop de tool use + tela de chat simples (com streaming se der).
@@ -75,7 +75,8 @@ docs/
    do cliente 2"), resposta para tool vazia, limite de iterações, tratamento de erro da API.
 6. **Evals**: `evals/perguntas.json` (~15 perguntas com resultado esperado) + script `npm run evals`.
 7. **CI + deploy**: GitHub Actions, Neon, Vercel. Link público no README.
-8. **RAG (bônus)**: política de trocas/FAQ em markdown → embeddings → pgvector → tool `buscar_politica`.
+8. **Recuperar senha (bônus)**: tokens com validade + e-mail via provedor (ex.: Resend, plano gratuito).
+9. **RAG (bônus)**: política de trocas/FAQ em markdown → embeddings → pgvector → tool `buscar_politica`.
    Pedido continua sendo tool, não embedding: dado estruturado vai por query.
 
 ## Diário (`docs/DIARIO.md`) — obrigatório
