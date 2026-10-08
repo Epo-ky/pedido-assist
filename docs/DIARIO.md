@@ -137,3 +137,29 @@ Cadastro (2f); trocar o nome para Voltz e fazer o fundo; depois a Fase 3 (tools)
    consegue ver pedido do cliente B".
 4. Pendências menores: limite de tentativas de login (Fase 5), decidir o que fazer com a pasta
    `Claudio/`, e rever as vulnerabilidades do `npm audit` (hoje só em ferramentas de desenvolvimento).
+
+## 2026-10-07 (noite) — Voltz, fundo e início da Fase 3 (Vitest)
+
+### O que foi feito
+- Nome trocado para **Voltz** (loja) e **Volt** (assistente) nas telas, no título da aba e no README;
+  fundo com brilhos suaves e grade de pontos, que respeita "reduzir movimento".
+- Criado o documento `docs/ESTUDO.md` com perguntas para eu responder com as minhas palavras.
+- Instalado o Vitest, criado o `npm test` e transformado em teste permanente o teste da sessão
+  (6 testes de token).
+
+### O que deu errado
+- A instalação do Vitest falhou com conflito de dependências: o Vitest 5 pede `@types/node` 22 ou 24+,
+  e o projeto estava na 20. Resolvido subindo o `@types/node` para a 24, igual ao Node instalado,
+  sem usar `--force`.
+- O Vite avisou que a config do Vitest usava sintaxe ESM num arquivo tratado como CommonJS. Resolvido
+  renomeando para `vitest.config.mts`.
+
+### Decisões
+- Alinhar a versão de `@types/node` com a do Node em uso, em vez de forçar a instalação.
+- Os testes de segurança do token vão ficar no repositório e rodar antes de cada commit.
+
+### Próximos passos
+1. Responder o `docs/ESTUDO.md` e trazer as respostas para correção.
+2. Fase 3: as tools `listar_pedidos`, `detalhe_pedido` e `rastrear_entrega`, sempre filtrando pelo
+   cliente da sessão, com `zod` e limite de linhas, e o teste "cliente A não vê pedido do cliente B".
+3. Pendências: limite de tentativas de login (Fase 5), pasta `Claudio/` e `npm audit`.
