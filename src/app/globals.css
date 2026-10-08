@@ -1,12 +1,18 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --brilho-1: rgb(59 130 246 / 0.22);
+  --brilho-2: rgb(139 92 246 / 0.18);
+  --ponto: rgb(23 23 23 / 0.14);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --brilho-1: rgb(59 130 246 / 0.28);
+    --brilho-2: rgb(139 92 246 / 0.24);
+    --ponto: rgb(237 237 237 / 0.16);
   }
 }
 
@@ -45,5 +51,43 @@ a {
 @media (prefers-color-scheme: dark) {
   html {
     color-scheme: dark;
+  }
+}
+
+/* Fundo: brilhos suaves que se movem devagar e uma grade de pontos que some nas bordas. */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+body::before {
+  background:
+    radial-gradient(45vmax 45vmax at 15% 20%, var(--brilho-1), transparent 65%),
+    radial-gradient(40vmax 40vmax at 85% 80%, var(--brilho-2), transparent 65%);
+  animation: flutuar 28s ease-in-out infinite alternate;
+}
+
+body::after {
+  background-image: radial-gradient(var(--ponto) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+}
+
+@keyframes flutuar {
+  from {
+    transform: translate3d(-3%, -2%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(3%, 2%, 0) scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none;
   }
 }

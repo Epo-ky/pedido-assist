@@ -13,13 +13,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pedido Assist",
-  description: "Assistente de pedidos com IA para uma loja de eletrônicos.",
+  title: "Voltz",
+  description: "Acompanhe seus pedidos de eletrônicos com o Volt, o assistente da Voltz.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="pt-BR"className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>{children}</body>
     </html>
   );

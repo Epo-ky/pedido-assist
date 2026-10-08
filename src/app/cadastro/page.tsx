@@ -52,7 +52,7 @@ export default function CadastroPage() {
   return (
     <main className={styles.pagina}>
       <form className={styles.cartao} onSubmit={handleSubmit}>
-        <h1 className={styles.titulo}>Pedido Assist</h1>
+        <h1 className={styles.titulo}>Voltz</h1>
         <p className={styles.subtitulo}>Crie sua conta</p>
 
         <label className={styles.campo}>

@@ -1,11 +1,13 @@
-# Pedido Assist
+# Voltz
 
-Assistente de pedidos com IA para uma loja fictícia de eletrônicos. O cliente faz login e conversa com
+> Projeto de portfólio chamado `pedido-assist` no repositório. **Voltz** é a loja fictícia e **Volt** é o assistente.
+
+O Volt é um assistente de pedidos com IA para a Voltz, uma loja fictícia de eletrônicos. O cliente faz login e conversa com
 um assistente que responde dúvidas sobre **os próprios pedidos**, usando dados reais do PostgreSQL
 por meio de *function calling* (tool use) da Anthropic.
 
-> **Status:** em construção. Hoje existem o banco (schema, migrations e seed) e a conexão com o Drizzle.
-> Login, tools e chat com IA estão nas próximas fases. Veja o roteiro em [CLAUDE.md](CLAUDE.md) e as
+> **Status:** em construção. Hoje existem o banco (schema, migrations e seed), o login, o cadastro e as rotas
+> protegidas. As tools e o chat com IA estão nas próximas fases. Veja o roteiro em [CLAUDE.md](CLAUDE.md) e as
 > decisões e problemas reais em [docs/DIARIO.md](docs/DIARIO.md).
 
 ## Stack
@@ -44,7 +46,7 @@ Pré-requisitos: Node.js 20+ e PostgreSQL instalado (usei a versão 18, direto n
    npm run dev
    ```
 
-Abra http://localhost:3000.
+Abra http://localhost:3000. Você pode entrar com um usuário de demonstração ou criar uma conta em `/cadastro`.
 
 ## Usuários de demonstração
 
