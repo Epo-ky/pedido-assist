@@ -163,3 +163,36 @@ Cadastro (2f); trocar o nome para Voltz e fazer o fundo; depois a Fase 3 (tools)
 2. Fase 3: as tools `listar_pedidos`, `detalhe_pedido` e `rastrear_entrega`, sempre filtrando pelo
    cliente da sessão, com `zod` e limite de linhas, e o teste "cliente A não vê pedido do cliente B".
 3. Pendências: limite de tentativas de login (Fase 5), pasta `Claudio/` e `npm audit`.
+
+## 2026-10-08 — Instalação na máquina de trabalho e tool `listar_pedidos`
+
+### O que foi feito
+- Projeto instalado numa segunda máquina (Windows, PostgreSQL 17 nativo): `npm install`, `.env` com
+  `SESSION_SECRET` aleatório, `db:migrate`, `db:seed` e `db:test`. Lint, typecheck e testes passando;
+  login da Ana conferido (200 com cookie, 401 com senha errada).
+- Primeira tool da Fase 3: `listar_pedidos` em `src/lib/tools/list-orders.ts`, com 6 testes de
+  integração em `tests/list-orders.test.ts` (inclui "cliente A não vê pedidos do cliente B").
+
+### O que deu errado
+- O erro "SESSION_SECRET não definida" vinha de o `.env` desta máquina não ter essa variável.
+  Gerei um valor aleatório de 64 caracteres.
+- Eu não sabia a senha do Postgres desta máquina. A redefinição (trocar o `pg_hba.conf` para `trust`
+  temporariamente) não funcionou na primeira vez porque o PowerShell não estava como administrador;
+  a causa apareceu quando a senha continuou sendo recusada pelo `psql`.
+- Depois da senha trocada, o `psql` conectava mas o Node não. Causa: a URL do `DATABASE_URL` ainda tinha
+  a senha antiga; minha checagem de "placeholder" tinha casado com o comentário do `.env`, e não com a URL.
+- O `.env` tinha uma linha solta (`node -e "..."`), sobra de quando o segredo foi gerado à mão. Removida.
+
+### Decisões
+- `listOrders(clienteId, rawArgs)`: o `clienteId` é parâmetro separado, vindo da sessão; os argumentos do
+  modelo passam por um zod `.strict()` que **rejeita** campos extras (um `cliente_id` forjado dá erro).
+- Limite de 20 linhas por consulta; filtro `ate` inclusivo (vale até o fim do dia).
+- Os testes de tools usam o Postgres real com o seed aplicado. Na CI (Fase 7) será preciso subir o banco
+  e rodar o seed antes dos testes.
+
+### Próximos passos
+1. `detalhe_pedido({ pedido_id })` com o teste de pedido alheio, depois `rastrear_entrega`.
+2. Pendências: limite de tentativas de login (Fase 5), pasta `Claudio/`, `npm audit` e a senha do
+   Postgres desta máquina, que apareceu numa conversa e convém trocar.
+
+> Nota: rascunho escrito a partir do que aconteceu na sessão. Ajuste com as suas palavras o que quiser.
