@@ -170,8 +170,8 @@ Cadastro (2f); trocar o nome para Voltz e fazer o fundo; depois a Fase 3 (tools)
 - Projeto instalado numa segunda máquina (Windows, PostgreSQL 17 nativo): `npm install`, `.env` com
   `SESSION_SECRET` aleatório, `db:migrate`, `db:seed` e `db:test`. Lint, typecheck e testes passando;
   login da Ana conferido (200 com cookie, 401 com senha errada).
-- Primeira tool da Fase 3: `listar_pedidos` em `src/lib/tools/list-orders.ts`, com 6 testes de
-  integração em `tests/list-orders.test.ts` (inclui "cliente A não vê pedidos do cliente B").
+- Fase 3: as 3 tools em `src/lib/tools/` (`list-orders.ts`, `order-detail.ts`, `track-delivery.ts`), com 16
+  testes de integração novos (22 no total). Inclui "cliente A não vê pedido/entrega do cliente B".
 
 ### O que deu errado
 - O erro "SESSION_SECRET não definida" vinha de o `.env` desta máquina não ter essa variável.
@@ -183,15 +183,21 @@ Cadastro (2f); trocar o nome para Voltz e fazer o fundo; depois a Fase 3 (tools)
   a senha antiga; minha checagem de "placeholder" tinha casado com o comentário do `.env`, e não com a URL.
 - O `.env` tinha uma linha solta (`node -e "..."`), sobra de quando o segredo foi gerado à mão. Removida.
 
+- O typecheck acusou `previsao` possivelmente `null` na `rastrear_entrega`: no `LEFT JOIN` todas as
+  colunas da entrega são anuláveis, e checar só `transportadora` não bastava. Passei a checar cada campo.
+
 ### Decisões
 - `listOrders(clienteId, rawArgs)`: o `clienteId` é parâmetro separado, vindo da sessão; os argumentos do
   modelo passam por um zod `.strict()` que **rejeita** campos extras (um `cliente_id` forjado dá erro).
+- Pedido alheio e pedido inexistente devolvem o mesmo `null`, para não revelar se um id existe.
+- `rastrear_entrega` calcula `atrasada` no servidor (previsão vencida e pedido não entregue/cancelado),
+  para o modelo não comparar datas. Pedido sem entrega devolve `entrega: null`, diferente de `null`.
 - Limite de 20 linhas por consulta; filtro `ate` inclusivo (vale até o fim do dia).
 - Os testes de tools usam o Postgres real com o seed aplicado. Na CI (Fase 7) será preciso subir o banco
   e rodar o seed antes dos testes.
 
 ### Próximos passos
-1. `detalhe_pedido({ pedido_id })` com o teste de pedido alheio, depois `rastrear_entrega`.
+1. Fase 4: a rota `/api/chat` com o loop de tool use, ligando `getSession()` ao `clienteId` das tools.
 2. Pendências: limite de tentativas de login (Fase 5), pasta `Claudio/`, `npm audit` e a senha do
    Postgres desta máquina, que apareceu numa conversa e convém trocar.
 
