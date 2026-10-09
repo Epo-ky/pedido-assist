@@ -49,14 +49,6 @@
   outline-offset: 1px;
 }
 
-.recuperar {
-  align-self: flex-end;
-  margin-top: -8px;
-  font-size: 0.85rem;
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .linkSecundario {
   padding: 11px 12px;
   font-size: 1rem;

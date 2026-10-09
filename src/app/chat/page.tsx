@@ -4,6 +4,8 @@ import { getSession } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { clientes } from "@/lib/db/schema";
 import { BotaoSair } from "./botao-sair";
+import { Chat } from "./chat";
+import styles from "./chat.module.css";
 
 export default async function ChatPage() {
   const sessao = await getSession();
@@ -23,10 +25,15 @@ export default async function ChatPage() {
   }
 
   return (
-    <main style={{ padding: 32 }}>
-      <h1>Olá, {cliente.nome}</h1>
-      <p>O chat ainda está em construção.</p>
-      <BotaoSair />
+    <main className={styles.pagina}>
+      <header className={styles.cabecalho}>
+        <span className={styles.marca}>Voltz</span>
+        <div className={styles["usuario-info"]}>
+          <span>{cliente.nome}</span>
+          <BotaoSair />
+        </div>
+      </header>
+      <Chat nome={cliente.nome.split(" ")[0]} />
     </main>
   );
 }

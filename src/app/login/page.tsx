@@ -69,14 +69,6 @@ export default function LoginPage() {
           />
         </label>
 
-        <span
-          className={styles.recuperar}
-          aria-disabled="true"
-          title="Em breve"
-        >
-          Esqueci minha senha (em breve)
-        </span>
-
         <p className={styles.erro} role="alert">
           {erro}
         </p>
