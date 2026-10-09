@@ -202,3 +202,29 @@ Cadastro (2f); trocar o nome para Voltz e fazer o fundo; depois a Fase 3 (tools)
    Postgres desta máquina, que apareceu numa conversa e convém trocar.
 
 > Nota: rascunho escrito a partir do que aconteceu na sessão. Ajuste com as suas palavras o que quiser.
+
+## 2026-10-08 (noite) — Revisão das tools e correção do fuso horário
+
+### O que foi feito
+- Li as 3 tools e os testes feitos na outra máquina; na minha, 22 testes passavam.
+- Corrigido o cálculo de "hoje" na `rastrear_entrega` para o fuso de Brasília, com 5 testes novos
+  (27 no total).
+
+### O que deu errado
+- Numa revisão de código apareceu um bug: a regra de atraso usava `toISOString()` (UTC). Confirmei às
+  21h07 em Brasília: o código achava que já era 09/10 quando ainda era 08/10. Na prática, entre 21h e
+  meia-noite uma entrega com previsão para hoje apareceria como atrasada para o cliente.
+- Os testes antigos não pegavam isso porque só usavam os dados do seed, nunca um horário simulado.
+
+### Decisões
+- A regra virou a função pura `isDeliveryLate(status, previsao, now)`, com o horário como parâmetro, para
+  testar qualquer momento sem banco e sem mexer no relógio.
+- Provei que os testes servem: reintroduzi o bug de propósito, 2 testes ficaram vermelhos, e depois
+  restaurei o conserto.
+- Não rodei o seed de novo para não apagar contas de teste; ele já usa a conta nova.
+
+### Pendências desta revisão
+1. `listar_pedidos` corta em 20 sem avisar: devolver também se houve corte (`truncado`).
+2. Na Fase 4, o loop do chat precisa capturar o erro do `zod` e devolvê-lo ao modelo como erro da tool.
+
+> Nota: rascunho com os fatos do dia. Ajuste com as suas palavras o que quiser.
