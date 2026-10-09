@@ -120,6 +120,18 @@ describe("executeTool", () => {
     expect(detalhe.criadoEm).toMatch(/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/);
   });
 
+  it("aceita null nos filtros como 'sem filtro', do jeito que os modelos costumam mandar", async () => {
+    const comNulls = await executeTool(
+      anaId,
+      "listar_pedidos",
+      JSON.stringify({ status: null, desde: null, ate: null }),
+    );
+    const semArgs = await executeTool(anaId, "listar_pedidos", "{}");
+
+    expect(comNulls.isError).toBe(false);
+    expect(comNulls.content).toBe(semArgs.content);
+  });
+
   it("lista vazia vira encontrado: false, para o modelo não inventar", async () => {
     const resultado = await executeTool(
       anaId,

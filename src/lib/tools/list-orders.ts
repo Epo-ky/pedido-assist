@@ -10,9 +10,10 @@ export const MAX_ORDERS = 20;
 // .strict() faz o zod recusar qualquer campo extra, inclusive um cliente_id forjado.
 export const listOrdersArgs = z
   .object({
-    status: z.enum(statusPedido.enumValues).optional(),
-    desde: z.iso.date().optional(),
-    ate: z.iso.date().optional(),
+    // Os modelos costumam mandar null para dizer "sem filtro", então null vale como ausente.
+    status: z.enum(statusPedido.enumValues).nullish(),
+    desde: z.iso.date().nullish(),
+    ate: z.iso.date().nullish(),
   })
   .strict();
 

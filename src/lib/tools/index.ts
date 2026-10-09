@@ -17,7 +17,8 @@ const registry: Record<string, RegisteredTool> = {
     description:
       "Lista os pedidos do cliente logado, do mais recente para o mais antigo (no máximo 20). " +
       "Use para perguntas como 'quais são os meus pedidos', 'meus pedidos cancelados' ou 'pedidos de setembro'. " +
-      "Filtros opcionais: status, desde e ate (datas AAAA-MM-DD, ambas inclusivas).",
+      "Filtros opcionais: status, desde e ate (datas AAAA-MM-DD, ambas inclusivas). " +
+      "Só use um filtro se o cliente pediu aquele filtro; sem filtros, a lista traz todos os pedidos.",
     schema: listOrdersArgs,
     run: listOrders,
   },
@@ -40,15 +41,20 @@ const registry: Record<string, RegisteredTool> = {
 
 // Versão enxuta do JSON Schema para o modelo: sem "$schema" e sem a regex longa de datas.
 // A validação de verdade continua no zod, no servidor.
+function removerPatternDeData(node: unknown): void {
+  if (Array.isArray(node)) {
+    node.forEach(removerPatternDeData);
+  } else if (node && typeof node === "object") {
+    const objeto = node as Record<string, unknown>;
+    if (objeto.format === "date") delete objeto.pattern;
+    Object.values(objeto).forEach(removerPatternDeData);
+  }
+}
+
 function toModelSchema(schema: z.ZodType): Record<string, unknown> {
   const { $schema, ...jsonSchema } = z.toJSONSchema(schema) as Record<string, unknown>;
   void $schema;
-
-  const properties = jsonSchema.properties as Record<string, Record<string, unknown>> | undefined;
-  for (const property of Object.values(properties ?? {})) {
-    if (property.format === "date") delete property.pattern;
-  }
-
+  removerPatternDeData(jsonSchema);
   return jsonSchema;
 }
 
