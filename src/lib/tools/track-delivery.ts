@@ -1,12 +1,25 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+import { dateInBrazil } from "@/lib/dates";
 import { db } from "@/lib/db";
-import { entregas, pedidos } from "@/lib/db/schema";
+import { entregas, pedidos, statusPedido } from "@/lib/db/schema";
 
 // Sem cliente_id aqui de propósito (ver list-orders.ts): .strict() recusa campos extras.
 export const trackDeliveryArgs = z
   .object({ pedido_id: z.number().int().positive() })
   .strict();
+
+// Atrasada = previsão vencida e pedido ainda não finalizado. "previsao" é uma data AAAA-MM-DD, então
+// comparar as strings equivale a comparar as datas. "now" é um parâmetro para o teste poder simular o horário.
+export function isDeliveryLate(
+  status: (typeof statusPedido.enumValues)[number],
+  previsao: string,
+  now: Date = new Date(),
+): boolean {
+  return (
+    status !== "entregue" && status !== "cancelado" && previsao < dateInBrazil(now)
+  );
+}
 
 // clienteId vem da SESSÃO. Devolve null para pedido inexistente ou de outro cliente.
 // Pedido do cliente sem entrega (ex.: pendente, cancelado) devolve entrega: null,
@@ -44,10 +57,7 @@ export async function trackDelivery(clienteId: number, rawArgs: unknown) {
   }
 
   // Calculado no servidor para o modelo não ter que comparar datas (e errar).
-  // "previsao" é uma data AAAA-MM-DD; comparar as strings equivale a comparar as datas.
-  const hoje = new Date().toISOString().slice(0, 10);
-  const atrasada =
-    status !== "entregue" && status !== "cancelado" && previsao < hoje;
+  const atrasada = isDeliveryLate(status, previsao);
 
   return {
     pedidoId,

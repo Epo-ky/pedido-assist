@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { sql } from "drizzle-orm";
+import { dateInBrazil } from "../src/lib/dates";
 import { db, pool } from "../src/lib/db";
 import {
   clientes,
@@ -130,9 +131,9 @@ async function main() {
             pedidoId: pedidoCriado.id,
             transportadora: pedido.entrega.transportadora,
             codigoRastreio: `BR${String(indice + 1).padStart(9, "0")}BR`,
-            previsao: diasAPartirDeHoje(pedido.entrega.previsaoEmDias)
-              .toISOString()
-              .slice(0, 10),
+            previsao: dateInBrazil(
+              diasAPartirDeHoje(pedido.entrega.previsaoEmDias),
+            ),
             atualizadoEm: new Date(criadoEm.getTime() + DIA_EM_MS),
           });
         }
