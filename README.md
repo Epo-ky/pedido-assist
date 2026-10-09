@@ -4,7 +4,7 @@
 
 O Volt é um assistente de pedidos com IA para a Voltz, uma loja fictícia de eletrônicos. O cliente faz login e conversa com
 um assistente que responde dúvidas sobre **os próprios pedidos**, usando dados reais do PostgreSQL
-por meio de *function calling* (tool use) da Anthropic.
+por meio de *function calling* (tool use).
 
 > **Status:** em construção. Hoje existem o banco (schema, migrations e seed), o login, o cadastro e as rotas
 > protegidas. As tools e o chat com IA estão nas próximas fases. Veja o roteiro em [CLAUDE.md](CLAUDE.md) e as
@@ -14,7 +14,7 @@ por meio de *function calling* (tool use) da Anthropic.
 
 - Next.js (App Router) + TypeScript
 - PostgreSQL + Drizzle ORM (migrations e seed)
-- Anthropic SDK (tool use) — *fase 4*
+- Function calling via Groq (plano gratuito), atrás de uma interface de provedor — *fase 4*
 - Autenticação por cookie JWT assinado (`jose`) — *fase 2*
 - Vitest e GitHub Actions — *fases 3 e 7*
 

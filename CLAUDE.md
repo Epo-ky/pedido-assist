@@ -22,7 +22,7 @@ O projeto precisa demonstrar, de forma verificável:
 - **Next.js (App Router) + TypeScript** — front e API no mesmo projeto
 - **PostgreSQL** via Docker Compose (local); **Neon** em produção
 - **Drizzle ORM** + migrations + seed
-- **Anthropic SDK** (`@anthropic-ai/sdk`) com tool use; chave em `ANTHROPIC_API_KEY`
+- **Function calling via Groq** (`groq-sdk`, plano gratuito; modelo padrão `openai/gpt-oss-120b`) atrás de uma interface de provedor (`LlmProvider`); chave em `GROQ_API_KEY`. A API paga da Anthropic ficou fora do orçamento; trocar de provedor é escrever outro `LlmProvider`.
 - **Auth simples**: login com usuários do seed, sessão em cookie JWT assinado (`jose`). Sem OAuth.
 - **Vitest** para testes; **GitHub Actions** para CI (lint + typecheck + testes)
 - Deploy: **Vercel**

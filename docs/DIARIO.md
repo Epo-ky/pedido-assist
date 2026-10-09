@@ -228,3 +228,28 @@ Cadastro (2f); trocar o nome para Voltz e fazer o fundo; depois a Fase 3 (tools)
 2. Na Fase 4, o loop do chat precisa capturar o erro do `zod` e devolvê-lo ao modelo como erro da tool.
 
 > Nota: rascunho com os fatos do dia. Ajuste com as suas palavras o que quiser.
+
+## 2026-10-08 (noite) — Fase 4, passo 4a: provedor de LLM gratuito
+
+### O que foi feito
+- Criada a interface `LlmProvider` e o provedor Groq (`groq-sdk`); `npm run ai:test` faz uma chamada
+  simples e um ciclo completo de tool (o modelo pede, nós executamos, devolvemos o resultado).
+- CLAUDE.md e README atualizados: a stack agora é function calling via Groq, atrás da interface.
+
+### O que deu errado
+- Eu planejava usar a API da Anthropic, mas ela é paga por uso e não cabe no meu orçamento de estagiário.
+  Já tinha instalado o SDK e escrito o cliente; removi tudo antes de commitar.
+- O primeiro teste no Groq falhou com 404: o modelo `llama-3.3-70b-versatile`, que a documentação
+  citava, não existia para a minha conta. Descobri a causa listando os modelos da própria conta pela API
+  (`/openai/v1/models`) e passei para `openai/gpt-oss-120b`.
+
+### Decisões
+- Provedor gratuito (Groq) atrás de uma interface, para trocar de modelo ou de empresa sem reescrever o loop.
+- A segurança não depende do modelo: o `cliente_id` vem da sessão e as tools sempre filtram por ele; mesmo
+  um modelo mais fraco, ou enganado por prompt injection, não consegue ler pedido de outro cliente.
+- O modelo padrão é configurável por `GROQ_MODEL`.
+
+### Próximos passos
+1. 4b: registro das tools (definições para o modelo + execução segura, capturando o erro do `zod`).
+2. 4c: o loop de tool use com limite de iterações e log, testado com um provedor falso (sem usar a API).
+3. 4d: rota `/api/chat` ligada à sessão. 4e: tela de chat.
