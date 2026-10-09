@@ -49,7 +49,8 @@ export async function runChat(params: {
   provider: LlmProvider;
   // Vem SEMPRE da sessão (getSession). Nunca do corpo da requisição nem do que o modelo escreve.
   clienteId: number;
-  history: HistoryMessage[];
+  // Não confiável (vem do navegador): o runChat sanitiza antes de usar.
+  history: unknown;
   message: string;
   now?: Date;
   log?: (entry: ChatLogEntry) => void;

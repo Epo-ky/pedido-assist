@@ -1,9 +1,10 @@
 import Groq from "groq-sdk";
-import type {
-  ChatMessage,
-  LlmProvider,
-  ProviderResponse,
-  ToolDefinition,
+import {
+  type ChatMessage,
+  type LlmProvider,
+  LlmProviderError,
+  type ProviderResponse,
+  type ToolDefinition,
 } from "./provider";
 
 // Configurável por variável de ambiente para trocar de modelo sem mexer no código.
@@ -65,14 +66,25 @@ function toGroqTool(tool: ToolDefinition) {
 
 export const groqProvider: LlmProvider = {
   async complete({ messages, tools }): Promise<ProviderResponse> {
-    const resposta = await getClient().chat.completions.create({
-      model: GROQ_MODEL,
-      messages: messages.map(toGroqMessage),
-      // Alguns fornecedores recusam uma lista de tools vazia.
-      tools: tools.length ? tools.map(toGroqTool) : undefined,
-      // Sem aleatoriedade: o mesmo pedido tende a dar a mesma resposta, o que ajuda nos testes e nas evals.
-      temperature: 0,
-    });
+    let resposta;
+    try {
+      resposta = await getClient().chat.completions.create({
+        model: GROQ_MODEL,
+        messages: messages.map(toGroqMessage),
+        // Alguns fornecedores recusam uma lista de tools vazia.
+        tools: tools.length ? tools.map(toGroqTool) : undefined,
+        // Sem aleatoriedade: o mesmo pedido tende a dar a mesma resposta, o que ajuda nos testes e nas evals.
+        temperature: 0,
+      });
+    } catch (error) {
+      if (error instanceof Groq.APIError) {
+        const kind = error.status === 429 ? "rate_limit" : "unavailable";
+        throw new LlmProviderError(kind, `Groq respondeu com erro (${error.status ?? "sem status"})`, {
+          cause: error,
+        });
+      }
+      throw error;
+    }
 
     const mensagem = resposta.choices[0]?.message;
 

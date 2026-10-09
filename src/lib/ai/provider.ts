@@ -32,3 +32,16 @@ export interface LlmProvider {
     tools: ToolDefinition[];
   }): Promise<ProviderResponse>;
 }
+
+// Erro neutro do provedor: a rota decide a resposta HTTP sem conhecer o fornecedor.
+// "rate_limit" = limite de uso (ex.: 429 do plano gratuito); "unavailable" = qualquer outra falha do serviço.
+export class LlmProviderError extends Error {
+  constructor(
+    readonly kind: "rate_limit" | "unavailable",
+    message: string,
+    options?: { cause?: unknown },
+  ) {
+    super(message, options);
+    this.name = "LlmProviderError";
+  }
+}
