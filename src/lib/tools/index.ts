@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolDefinition } from "@/lib/ai/provider";
+import { formatDateTimeInBrazil } from "@/lib/dates";
 import { listOrders, listOrdersArgs } from "./list-orders";
 import { orderDetail, orderDetailArgs } from "./order-detail";
 import { trackDelivery, trackDeliveryArgs } from "./track-delivery";
@@ -65,6 +66,15 @@ export type ToolExecution = {
   isError: boolean;
 };
 
+// Datas viram texto no horário de Brasília aqui, no servidor: o modelo erra conversões de fuso.
+// (O JSON.stringify chama toJSON antes do replacer, por isso o valor original é lido de this[chave].)
+function serializar(valor: unknown): string {
+  return JSON.stringify(valor, function (this: Record<string, unknown>, chave, v) {
+    const original = this[chave];
+    return original instanceof Date ? formatDateTimeInBrazil(original) : v;
+  });
+}
+
 function erro(mensagem: string, detalhes?: unknown): ToolExecution {
   return { content: JSON.stringify({ erro: mensagem, detalhes }), isError: true };
 }
@@ -91,7 +101,7 @@ export async function executeTool(
     const resultado = await tool.run(clienteId, args);
     // Vazio (null ou lista vazia) vira um sinal explícito, para o modelo dizer "não encontrei" em vez de inventar.
     const vazio = resultado == null || (Array.isArray(resultado) && resultado.length === 0);
-    return { content: JSON.stringify(vazio ? { encontrado: false } : resultado), isError: false };
+    return { content: serializar(vazio ? { encontrado: false } : resultado), isError: false };
   } catch (error) {
     if (error instanceof z.ZodError) {
       return erro(

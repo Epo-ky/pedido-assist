@@ -111,6 +111,15 @@ describe("executeTool", () => {
     expect(JSON.parse(entregaAlheia.content)).toEqual({ encontrado: false });
   });
 
+  it("devolve as datas já no horário de Brasília, como texto legível", async () => {
+    const [pedido] = await listOrders(anaId, {});
+    const detalhe = JSON.parse(
+      (await executeTool(anaId, "detalhe_pedido", JSON.stringify({ pedido_id: pedido.id }))).content,
+    );
+
+    expect(detalhe.criadoEm).toMatch(/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/);
+  });
+
   it("lista vazia vira encontrado: false, para o modelo não inventar", async () => {
     const resultado = await executeTool(
       anaId,
