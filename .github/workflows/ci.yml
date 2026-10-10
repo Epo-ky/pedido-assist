@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  qualidade:
+    runs-on: ubuntu-latest
+
+    # Um Postgres descartável só para esta execução: os testes de tools, rotas e limites usam o banco de verdade.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: pedido_assist
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/pedido_assist
+      # Valor só da CI (não é um segredo de verdade): assina cookies de teste que morrem com a execução.
+      SESSION_SECRET: segredo-somente-para-a-ci-nao-use-em-producao
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # Os scripts de banco leem o .env (tsx --env-file); na CI ele é montado a partir das variáveis acima.
+      - name: Criar o .env para os scripts
+        run: |
+          echo "DATABASE_URL=$DATABASE_URL" >> .env
+          echo "SESSION_SECRET=$SESSION_SECRET" >> .env
+
+      - name: Criar as tabelas e popular o banco de teste
+        run: |
+          npm run db:migrate
+          npm run db:seed
+
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
