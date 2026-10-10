@@ -91,3 +91,22 @@ body::after {
     animation: none;
   }
 }
+
+/* Tema escolhido no botão: vale mais do que a preferência do sistema (por isso o seletor é mais específico). */
+:root[data-tema="claro"] {
+  --background: #ffffff;
+  --foreground: #171717;
+  --brilho-1: rgb(59 130 246 / 0.22);
+  --brilho-2: rgb(139 92 246 / 0.18);
+  --ponto: rgb(23 23 23 / 0.14);
+  color-scheme: light;
+}
+
+:root[data-tema="escuro"] {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --brilho-1: rgb(59 130 246 / 0.28);
+  --brilho-2: rgb(139 92 246 / 0.24);
+  --ponto: rgb(237 237 237 / 0.16);
+  color-scheme: dark;
+}

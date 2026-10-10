@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { BotaoTema } from "./botao-tema";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,8 +20,21 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>{children}</body>
+    // suppressHydrationWarning: o script abaixo muda o atributo data-tema do <html> antes do React assumir.
+    <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Aplica o tema salvo ANTES de a página aparecer, para não piscar o tema errado. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{var t=localStorage.getItem("tema");if(t==="claro"||t==="escuro")document.documentElement.dataset.tema=t}catch(e){}',
+          }}
+        />
+      </head>
+      <body>
+        {children}
+        <BotaoTema />
+      </body>
     </html>
   );
 }
