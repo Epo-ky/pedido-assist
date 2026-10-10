@@ -6,6 +6,7 @@ import {
   MAX_ITERATIONS,
   MAX_MESSAGE_LENGTH,
   MAX_PROVIDER_ATTEMPTS,
+  MAX_RETRIES_SEM_RESPOSTA,
   runChat,
   sanitizeHistory,
 } from "@/lib/ai/chat-loop";
@@ -138,6 +139,7 @@ describe("runChat", () => {
 
     expect(recebido).toHaveLength(MAX_ITERATIONS);
     expect(resultado.hitIterationLimit).toBe(true);
+    expect(resultado.answered).toBe(false);
     expect(resultado.reply).toContain("não consegui concluir");
   });
 
@@ -150,13 +152,30 @@ describe("runChat", () => {
     expect(resultado.reply).toBe("O pedido 8 custou R$ 179,80.\n- Mouse sem fio");
   });
 
-  it("usa uma mensagem padrão quando o modelo responde vazio", async () => {
-    const { provider } = modeloFalso(texto(null));
+  it("quando o modelo vem vazio, avisa e tenta de novo antes de pedir desculpas", async () => {
+    const { provider, recebido } = modeloFalso(texto(null), texto("Agora sim."));
+    const { logs, log } = registrarLogs();
+
+    const resultado = await runChat({ provider, clienteId: anaId, history: [], message: "oi", log });
+
+    expect(resultado.reply).toBe("Agora sim.");
+    expect(resultado.answered).toBe(true);
+    expect(recebido).toHaveLength(2);
+    expect(recebido[1].some((m) => m.role === "system" && m.content.includes("não escreveu nenhuma resposta"))).toBe(
+      true,
+    );
+    expect(logs).toContainEqual({ evento: "llm_erro", iteracao: 1, tentativa: 1, tipo: "sem_resposta" });
+  });
+
+  it("usa uma mensagem padrão, marcada como não respondida, quando o modelo insiste em vir vazio", async () => {
+    const { provider, recebido } = modeloFalso(texto(null));
     const { log } = registrarLogs();
 
     const resultado = await runChat({ provider, clienteId: anaId, history: [], message: "oi", log });
 
     expect(resultado.reply).toContain("não consegui gerar uma resposta");
+    expect(resultado.answered).toBe(false);
+    expect(recebido).toHaveLength(1 + MAX_RETRIES_SEM_RESPOSTA);
   });
 
   it("registra no log cada chamada ao modelo e cada tool, com duração", async () => {

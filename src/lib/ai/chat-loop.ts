@@ -24,6 +24,13 @@ const AVISO_CHAMADA_INVALIDA =
   "Tente de novo com argumentos válidos (números inteiros positivos para pedido_id, datas como AAAA-MM-DD), " +
   "ou responda ao cliente sem usar ferramenta.";
 
+// Às vezes o modelo termina sem escrever nada (nem pedir tool). Nesse caso ele é avisado e tenta de novo,
+// em vez de o cliente receber uma desculpa na primeira falha.
+export const MAX_RETRIES_SEM_RESPOSTA = 2;
+const AVISO_SEM_RESPOSTA =
+  "Aviso do sistema: você não escreveu nenhuma resposta ao cliente. Responda agora em texto, " +
+  "com base nos resultados das ferramentas, ou diga que não encontrou.";
+
 const RESPOSTA_SEM_CONTEUDO = "Desculpe, não consegui gerar uma resposta. Pode tentar de novo?";
 const RESPOSTA_LIMITE =
   "Desculpe, não consegui concluir essa consulta. Tente reformular a pergunta de outro jeito.";
@@ -40,6 +47,9 @@ export type ChatResult = {
   usage: { inputTokens: number; outputTokens: number };
   toolCalls: number;
   hitIterationLimit: boolean;
+  // false quando "reply" é uma mensagem de desculpa nossa (modelo sem resposta ou limite de voltas).
+  // Respostas assim não devem ir para o histórico: confundiriam as próximas respostas do modelo.
+  answered: boolean;
 };
 
 function logPadrao(entry: ChatLogEntry) {
@@ -87,6 +97,7 @@ export async function runChat(params: {
 
   const usage = { inputTokens: 0, outputTokens: 0 };
   let toolCalls = 0;
+  let retriesSemResposta = 0;
 
   for (let iteracao = 1; iteracao <= MAX_ITERATIONS; iteracao++) {
     const inicio = Date.now();
@@ -111,12 +122,20 @@ export async function runChat(params: {
 
     // Sem pedido de tool: o modelo terminou e esta é a resposta final.
     if (resposta.toolCalls.length === 0) {
-      return {
-        reply: toPlainText(resposta.content ?? "").trim() || RESPOSTA_SEM_CONTEUDO,
-        usage,
-        toolCalls,
-        hitIterationLimit: false,
-      };
+      const texto = toPlainText(resposta.content ?? "").trim();
+
+      if (texto) {
+        return { reply: texto, usage, toolCalls, hitIterationLimit: false, answered: true };
+      }
+
+      if (retriesSemResposta < MAX_RETRIES_SEM_RESPOSTA) {
+        retriesSemResposta++;
+        log({ evento: "llm_erro", iteracao, tentativa: retriesSemResposta, tipo: "sem_resposta" });
+        messages.push({ role: "system", content: AVISO_SEM_RESPOSTA });
+        continue;
+      }
+
+      return { reply: RESPOSTA_SEM_CONTEUDO, usage, toolCalls, hitIterationLimit: false, answered: false };
     }
 
     messages.push({ role: "assistant", content: resposta.content, toolCalls: resposta.toolCalls });
@@ -127,7 +146,7 @@ export async function runChat(params: {
     }
   }
 
-  return { reply: RESPOSTA_LIMITE, usage, toolCalls, hitIterationLimit: true };
+  return { reply: RESPOSTA_LIMITE, usage, toolCalls, hitIterationLimit: true, answered: false };
 }
 
 // Chama o modelo e se recupera das falhas em que insistir ajuda. Com temperature 0, repetir a MESMA chamada
