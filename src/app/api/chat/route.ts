@@ -4,6 +4,7 @@ import { MAX_MESSAGE_LENGTH, runChat } from "@/lib/ai/chat-loop";
 import { groqProvider } from "@/lib/ai/groq-provider";
 import { LlmProviderError } from "@/lib/ai/provider";
 import { getSession } from "@/lib/auth/session";
+import { esperaEmMinutos, tooManyRequests } from "@/lib/http";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { CHAT_GLOBAL, CHAT_POR_CLIENTE } from "@/lib/rate-rules";
 
@@ -13,13 +14,6 @@ const bodySchema = z.object({
   message: z.string().trim().min(1).max(MAX_MESSAGE_LENGTH),
   history: z.array(z.unknown()).max(100).optional(),
 });
-
-function limiteExcedido(mensagem: string, retryAfterSeconds: number) {
-  return NextResponse.json(
-    { erro: mensagem },
-    { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } },
-  );
-}
 
 export async function POST(request: Request) {
   const sessao = await getSession();
@@ -41,16 +35,15 @@ export async function POST(request: Request) {
     // antes de consumir a cota de todos (as tentativas bloqueadas também contam).
     const doCliente = await consumeRateLimit(`chat:cliente:${sessao.clienteId}`, CHAT_POR_CLIENTE);
     if (!doCliente.allowed) {
-      const minutos = Math.ceil(doCliente.retryAfterSeconds / 60);
-      return limiteExcedido(
-        `Você atingiu o limite de ${CHAT_POR_CLIENTE.max} mensagens por hora. Tente de novo em ${minutos} minuto(s).`,
+      return tooManyRequests(
+        `Você atingiu o limite de ${CHAT_POR_CLIENTE.max} mensagens por hora. Tente de novo em ${esperaEmMinutos(doCliente.retryAfterSeconds)}.`,
         doCliente.retryAfterSeconds,
       );
     }
 
     const global = await consumeRateLimit("chat:global", CHAT_GLOBAL);
     if (!global.allowed) {
-      return limiteExcedido(
+      return tooManyRequests(
         "O Volt atingiu o limite de uso de hoje. Volte amanhã, ou tente de novo mais tarde.",
         global.retryAfterSeconds,
       );
