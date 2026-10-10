@@ -1,5 +1,7 @@
 # Voltz
 
+[![CI](https://github.com/Epo-ky/pedido-assist/actions/workflows/ci.yml/badge.svg)](https://github.com/Epo-ky/pedido-assist/actions/workflows/ci.yml)
+
 > Projeto de portfólio chamado `pedido-assist` no repositório. **Voltz** é a loja fictícia e **Volt** é o assistente.
 
 O Volt é um assistente de pedidos com IA para a Voltz, uma loja fictícia de eletrônicos. O cliente faz login e conversa com
@@ -17,7 +19,7 @@ por meio de *function calling* (tool use).
 - PostgreSQL + Drizzle ORM (migrations e seed)
 - Function calling via Groq (plano gratuito), atrás de uma interface de provedor
 - Autenticação por cookie JWT assinado (`jose`) e validação com `zod`
-- Vitest (testes) — GitHub Actions e deploy ainda por vir
+- Vitest (testes) e GitHub Actions (CI com Postgres de teste a cada push) — deploy ainda por vir
 
 ## Como rodar local
 

@@ -343,3 +343,34 @@ Cadastro (2f); trocar o nome para Voltz e fazer o fundo; depois a Fase 3 (tools)
 ### Próximos passos
 1. Deploy (Fase 6): GitHub Actions, Neon e Vercel.
 2. Mini-loja e ações com confirmação (Fase 7), depois as evals.
+
+## 2026-10-10 — Fase 6, passo 1: GitHub Actions
+
+### O que foi feito
+- Workflow `.github/workflows/ci.yml`: a cada push na main e em pull requests, sobe um Postgres 17 descartável,
+  aplica as migrations e o seed e roda lint, typecheck e os 98 testes (cerca de 1 minuto). Selo de status no README.
+
+### O que deu errado
+- A primeira execução falhou no `npm ci`, embora passasse na minha máquina. Os logs do GitHub exigem login de
+  administrador, então a primeira tentativa de descobrir a causa não deu em nada.
+- Fiz o próprio workflow publicar o fim do log como anotação (que a API pública entrega), mas eu mesmo estraguei o
+  YAML: o `\n` do comando `tr '\n'` virou uma quebra de linha de verdade ao gerar o arquivo, e o GitHub recusou o
+  workflow inteiro (a execução saiu sem nenhum job, com o caminho do arquivo no lugar do nome). Corrigido.
+- A anotação mostrou só a ajuda do comando; precisei capturar o INÍCIO do log. A causa apareceu: `Missing:
+  @emnapi/runtime e @emnapi/core from lock file`. O lockfile gerado no Windows não registra esses pacotes opcionais
+  do Linux, e o `npm ci` recusa um lockfile fora de sincronia.
+- Duas tentativas que não resolveram: `npm install --package-lock-only` (nada mudou) e gerar o lockfile do zero
+  (saiu MENOR, 404 pacotes contra 559, sem os pacotes que faltavam; descartei e restaurei o original).
+  Funcionou declarar `@emnapi/core` e `@emnapi/runtime` como dependências de desenvolvimento, contorno conhecido
+  desse bug do npm.
+- Eu não consegui reproduzir o erro localmente: nem `npm ci --dry-run` no Windows, nem simulando
+  `--os=linux --cpu=x64`. Só a CI de verdade mostrou o problema, o que justifica ter a CI.
+
+### Decisões
+- O Postgres da CI é um serviço do próprio job (descartável), e o `.env` é montado a partir das variáveis do job,
+  para os scripts de banco funcionarem sem mudar. O `SESSION_SECRET` da CI é um valor só dela, sem uso fora dos testes.
+- A bateria de prompt injection NÃO roda na CI: gasta a cota do Groq e o modelo varia entre execuções.
+
+### Próximos passos
+1. Criar o banco no Neon e aplicar as migrations e o seed (eu guio; a conta é minha).
+2. Subir na Vercel com as variáveis de ambiente (`DATABASE_URL`, `SESSION_SECRET`, `GROQ_API_KEY`).
