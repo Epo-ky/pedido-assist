@@ -8,6 +8,13 @@
       "when": 1791333109305,
       "tag": "0000_calm_shinko_yamashiro",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791595667583,
+      "tag": "0001_spooky_echo",
+      "breakpoints": true
     }
   ]
 }

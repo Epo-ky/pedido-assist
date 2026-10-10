@@ -5,6 +5,7 @@ import {
   numeric,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
@@ -78,3 +79,16 @@ export const entregas = pgTable("entregas", {
     .notNull()
     .defaultNow(),
 });
+
+// Contadores de uso por janela de tempo (limite de mensagens do chat, tentativas de login...).
+// Fica no Postgres porque em produção (Vercel) cada requisição pode cair numa instância diferente,
+// então um contador em memória não serviria.
+export const limitesUso = pgTable(
+  "limites_uso",
+  {
+    chave: text().notNull(),
+    janelaInicio: timestamp("janela_inicio", { withTimezone: true }).notNull(),
+    contagem: integer().notNull().default(0),
+  },
+  (tabela) => [primaryKey({ columns: [tabela.chave, tabela.janelaInicio] })],
+);
