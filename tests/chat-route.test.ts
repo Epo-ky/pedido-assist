@@ -2,13 +2,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { runChat } from "@/lib/ai/chat-loop";
 import { LlmProviderError } from "@/lib/ai/provider";
 import { getSession } from "@/lib/auth/session";
+import { consumeRateLimit } from "@/lib/rate-limit";
 import { POST } from "@/app/api/chat/route";
 
 // Sem cookies reais nem modelo real: o que se testa aqui é a regra da rota.
 vi.mock("@/lib/auth/session", () => ({ getSession: vi.fn() }));
 vi.mock("@/lib/ai/chat-loop", () => ({ MAX_MESSAGE_LENGTH: 2000, runChat: vi.fn() }));
 
+vi.mock("@/lib/rate-limit", () => ({ consumeRateLimit: vi.fn() }));
+
 const getSessionMock = vi.mocked(getSession);
+const consumeMock = vi.mocked(consumeRateLimit);
 const runChatMock = vi.mocked(runChat);
 
 function requisicao(corpo: unknown) {
@@ -26,8 +30,12 @@ const RESULTADO = {
   hitIterationLimit: false,
 };
 
+const LIBERADO = { allowed: true, contagem: 1, retryAfterSeconds: 3600 };
+const BLOQUEADO = { allowed: false, contagem: 21, retryAfterSeconds: 600 };
+
 beforeEach(() => {
   vi.resetAllMocks();
+  consumeMock.mockResolvedValue(LIBERADO);
 });
 
 describe("POST /api/chat", () => {
@@ -79,5 +87,48 @@ describe("POST /api/chat", () => {
 
     expect(resposta.status).toBe(503);
     expect(JSON.stringify(await resposta.json())).not.toContain("segredo123");
+  });
+
+  it("bloqueia com 429 e Retry-After quando o cliente estoura o próprio limite, sem tocar no global nem no modelo", async () => {
+    getSessionMock.mockResolvedValue({ clienteId: 1 });
+    consumeMock.mockResolvedValueOnce(BLOQUEADO);
+
+    const resposta = await POST(requisicao({ message: "oi" }));
+
+    expect(resposta.status).toBe(429);
+    expect(resposta.headers.get("Retry-After")).toBe("600");
+    expect((await resposta.json()).erro).toContain("10 minuto");
+    expect(runChatMock).not.toHaveBeenCalled();
+    // Só o limite do cliente foi consultado: quem já estourou não consome a cota de todos.
+    expect(consumeMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("bloqueia com 429 quando o limite global do dia acaba", async () => {
+    getSessionMock.mockResolvedValue({ clienteId: 1 });
+    consumeMock.mockResolvedValueOnce(LIBERADO).mockResolvedValueOnce(BLOQUEADO);
+
+    const resposta = await POST(requisicao({ message: "oi" }));
+
+    expect(resposta.status).toBe(429);
+    expect((await resposta.json()).erro).toContain("limite de uso de hoje");
+    expect(runChatMock).not.toHaveBeenCalled();
+  });
+
+  it("conta o limite na chave do cliente da SESSÃO, e não do corpo da requisição", async () => {
+    getSessionMock.mockResolvedValue({ clienteId: 1 });
+    runChatMock.mockResolvedValue(RESULTADO);
+
+    await POST(requisicao({ message: "oi", clienteId: 2 }));
+
+    expect(consumeMock.mock.calls.map(([chave]) => chave)).toEqual(["chat:cliente:1", "chat:global"]);
+  });
+
+  it("não gasta limite com requisição inválida nem sem login", async () => {
+    getSessionMock.mockResolvedValue(null);
+    await POST(requisicao({ message: "oi" }));
+    getSessionMock.mockResolvedValue({ clienteId: 1 });
+    await POST(requisicao({ message: "   " }));
+
+    expect(consumeMock).not.toHaveBeenCalled();
   });
 });
