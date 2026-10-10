@@ -3,8 +3,12 @@ import { DrizzleQueryError } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSession } from "@/lib/auth/session";
+import { getClientIp } from "@/lib/client-ip";
 import { db } from "@/lib/db";
 import { clientes } from "@/lib/db/schema";
+import { esperaEmMinutos, tooManyRequests } from "@/lib/http";
+import { consumeRateLimit } from "@/lib/rate-limit";
+import { CADASTRO_POR_IP } from "@/lib/rate-rules";
 
 // O bcrypt só considera os primeiros 72 bytes da senha, por isso o limite máximo.
 const cadastroSchema = z.object({
@@ -32,6 +36,15 @@ export async function POST(request: Request) {
         erro: "Informe nome, um e-mail válido e uma senha de 8 a 72 caracteres.",
       },
       { status: 400 },
+    );
+  }
+
+  // Antes do bcrypt (que é caro): quem exagera é barrado sem gastar processamento.
+  const doIp = await consumeRateLimit(`cadastro:ip:${getClientIp(request)}`, CADASTRO_POR_IP);
+  if (!doIp.allowed) {
+    return tooManyRequests(
+      `Muitos cadastros a partir deste endereço. Tente de novo em ${esperaEmMinutos(doIp.retryAfterSeconds)}.`,
+      doIp.retryAfterSeconds,
     );
   }
 
