@@ -441,3 +441,34 @@ Cadastro (2f); trocar o nome para Voltz e fazer o fundo; depois a Fase 3 (tools)
 2. O histórico do chat some ao recarregar a página (não é guardado no servidor).
 3. Nomes com maiúsculas estranhas ("Evando Pereira De Oliveira") aparecem como foram digitados no cadastro.
 4. Próximo: mini-loja e ações com confirmação (Fase 7), depois as evals.
+
+## 2026-10-10 (dia) — Fase 7, passo 7a: histórico do chat guardado no servidor
+
+### O que foi feito
+- Tabela `mensagens_chat` (migration 0002): as conversas ficam no Postgres, no máximo 50 mensagens por cliente
+  (as mais antigas são apagadas), e cada cliente só enxerga a sua. A tela abre com a conversa anterior e tem o
+  botão "Limpar conversa". Aplicado no Neon antes de publicar, e conferido em produção.
+- Era um pedido meu ("já que é um chat"). O custo é mínimo: textos curtos no banco, e o histórico enviado ao
+  modelo continua limitado às últimas 20 mensagens.
+
+### O que deu errado
+- No teste ponta a ponta com o modelo de verdade, a primeira pergunta voltou "Desculpe, não consegui gerar uma
+  resposta" (o modelo terminou sem escrever nada), e essa desculpa foi guardada no histórico, o que poderia
+  confundir as próximas respostas. Corrigi em dois níveis: o loop avisa o modelo e tenta de novo (até 2 vezes), e
+  uma desculpa nossa nunca vai para o histórico (`answered`).
+- Um erro meu no `countMessages` (um ORDER BY junto de COUNT(*), que o banco recusaria), e o mock do `chat-loop`
+  nos testes da rota não tinha a constante nova: os testes e o typecheck pegaram na hora.
+- O teste da rota gravaria mensagens de verdade no histórico da Ana: o módulo do histórico é simulado nesses
+  testes, e os testes do histórico usam clientes temporários, apagados no fim.
+
+### Decisões
+- O histórico agora vem do BANCO e o enviado no corpo é ignorado. Isso fecha a pendência de segurança da fase 4:
+  um turno de "assistente" forjado pelo navegador não chega mais ao modelo (teste provado com mutação).
+- Só se guarda quando o modelo respondeu de verdade, e a pergunta e a resposta entram na mesma transação.
+- Ordem de publicação: a migration vai para o Neon ANTES do push, senão o site novo quebraria sem a tabela.
+
+### Próximos passos
+1. 7b: a vitrine com os produtos. 7c: comprar (preço e total sempre do banco).
+2. 7d: o Volt propõe o cancelamento de um pedido pendente e quem executa é o clique de confirmação do cliente,
+   validado pelo servidor; o modelo nunca cancela sozinho.
+3. 7e: ajustar nomes ("De" em maiúscula), testes de segurança das ações e o prompt.

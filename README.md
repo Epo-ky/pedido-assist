@@ -11,7 +11,7 @@ um assistente que responde dúvidas sobre **os próprios pedidos**, usando dados
 por meio de *function calling* (tool use).
 
 > **Status:** em construção. Já funcionam o login, o cadastro, o chat com o Volt (que consulta os pedidos do
-> cliente por meio de tools), os limites de uso e uma bateria de ataques de prompt injection. O site está no ar (Vercel + Neon). Faltam a
+> cliente por meio de tools e guarda a conversa no servidor), os limites de uso e uma bateria de ataques de prompt injection. O site está no ar (Vercel + Neon). Faltam a
 > mini-loja com ações e as evals. Veja o roteiro em [CLAUDE.md](CLAUDE.md) e as decisões e problemas reais em
 > [docs/DIARIO.md](docs/DIARIO.md).
 
