@@ -41,8 +41,7 @@ jobs:
       - name: Instalar as dependências
         run: |
           set -o pipefail
-          npm ci 2>&1 | tee npm-ci.log || { echo "::error title=npm ci falhou::$(tail -n 30 npm-ci.log | tr '
-' '|' | cut -c1-1800)"; exit 1; }
+          npm ci 2>&1 | tee npm-ci.log || { echo "::error title=npm ci falhou::$(tail -n 30 npm-ci.log | tr '\n' '|' | cut -c1-1800)"; exit 1; }
 
       # Os scripts de banco leem o .env (tsx --env-file); na CI ele é montado a partir das variáveis acima.
       - name: Criar o .env para os scripts
