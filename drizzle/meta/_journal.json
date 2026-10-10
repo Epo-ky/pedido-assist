@@ -15,6 +15,13 @@
       "when": 1791595667583,
       "tag": "0001_spooky_echo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791600481605,
+      "tag": "0002_tearful_doctor_strange",
+      "breakpoints": true
     }
   ]
 }

@@ -92,3 +92,21 @@ export const limitesUso = pgTable(
   },
   (tabela) => [primaryKey({ columns: [tabela.chave, tabela.janelaInicio] })],
 );
+
+export const papelMensagem = pgEnum("papel_mensagem", ["user", "assistant"]);
+
+// Histórico do chat, guardado no servidor. Só entram aqui o que o cliente escreveu e o que o Volt respondeu:
+// como o servidor é quem guarda, o navegador não consegue forjar um turno do "assistente".
+export const mensagensChat = pgTable(
+  "mensagens_chat",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    clienteId: integer("cliente_id")
+      .notNull()
+      .references(() => clientes.id, { onDelete: "cascade" }),
+    papel: papelMensagem().notNull(),
+    conteudo: text().notNull(),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (tabela) => [index("mensagens_chat_cliente_id_idx").on(tabela.clienteId, tabela.id)],
+);
