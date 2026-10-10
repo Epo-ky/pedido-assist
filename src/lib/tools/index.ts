@@ -39,22 +39,36 @@ const registry: Record<string, RegisteredTool> = {
   },
 };
 
-// Versão enxuta do JSON Schema para o modelo: sem "$schema" e sem a regex longa de datas.
-// A validação de verdade continua no zod, no servidor.
-function removerPatternDeData(node: unknown): void {
+// Versão enxuta do JSON Schema para o modelo. É um GUIA, não o juiz: quem valida de verdade é o zod, no servidor.
+// Por isso saem "$schema", limites numéricos, formatos, regex de data e additionalProperties. O provedor
+// valida a chamada contra este schema ANTES de nos entregá-la e, se o modelo mandar um valor fora da regra
+// (ex.: pedido_id 0), recusa com erro 400 e o servidor nunca chega a responder ao modelo com uma mensagem útil.
+const PALAVRAS_DE_VALIDACAO = [
+  "pattern",
+  "format",
+  "minimum",
+  "maximum",
+  "exclusiveMinimum",
+  "exclusiveMaximum",
+  "minLength",
+  "maxLength",
+  "additionalProperties",
+];
+
+function removerValidacoes(node: unknown): void {
   if (Array.isArray(node)) {
-    node.forEach(removerPatternDeData);
+    node.forEach(removerValidacoes);
   } else if (node && typeof node === "object") {
     const objeto = node as Record<string, unknown>;
-    if (objeto.format === "date") delete objeto.pattern;
-    Object.values(objeto).forEach(removerPatternDeData);
+    for (const palavra of PALAVRAS_DE_VALIDACAO) delete objeto[palavra];
+    Object.values(objeto).forEach(removerValidacoes);
   }
 }
 
 function toModelSchema(schema: z.ZodType): Record<string, unknown> {
   const { $schema, ...jsonSchema } = z.toJSONSchema(schema) as Record<string, unknown>;
   void $schema;
-  removerPatternDeData(jsonSchema);
+  removerValidacoes(jsonSchema);
   return jsonSchema;
 }
 

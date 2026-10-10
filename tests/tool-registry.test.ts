@@ -35,18 +35,19 @@ describe("definições das tools enviadas ao modelo", () => {
     for (const tool of toolDefinitions) expect(tool.description.length).toBeGreaterThan(20);
   });
 
-  it("nenhuma tool deixa o modelo informar cliente_id, e todas recusam campos extras", () => {
+  it("nenhuma tool deixa o modelo informar cliente_id", () => {
     for (const tool of toolDefinitions) {
-      const schema = JSON.stringify(tool.parameters);
-      expect(schema).not.toMatch(/cliente/i);
-      expect(tool.parameters.additionalProperties).toBe(false);
+      expect(JSON.stringify(tool.parameters)).not.toMatch(/cliente/i);
     }
   });
 
-  it("não envia o campo $schema nem a regex longa de datas", () => {
+  it("envia ao modelo só um guia: sem regras de validação que o provedor aplicaria antes do servidor", () => {
     for (const tool of toolDefinitions) {
+      const schema = JSON.stringify(tool.parameters);
       expect(tool.parameters).not.toHaveProperty("$schema");
-      expect(JSON.stringify(tool.parameters)).not.toContain("pattern");
+      for (const palavra of ["pattern", "format", "minimum", "exclusiveMinimum", "additionalProperties"]) {
+        expect(schema).not.toContain(`"${palavra}"`);
+      }
     }
   });
 });
@@ -75,6 +76,18 @@ describe("executeTool", () => {
     const resultado = await executeTool(anaId, "listar_pedidos", "{quebrado");
 
     expect(resultado.isError).toBe(true);
+  });
+
+  it("o servidor continua recusando o que o schema do modelo deixa passar (pedido_id 0, campo extra)", async () => {
+    const zero = await executeTool(anaId, "detalhe_pedido", '{"pedido_id":0}');
+    const negativo = await executeTool(anaId, "rastrear_entrega", '{"pedido_id":-1}');
+    const extra = await executeTool(anaId, "detalhe_pedido", '{"pedido_id":1,"cliente_id":2}');
+    const dataRuim = await executeTool(anaId, "listar_pedidos", '{"desde":"ontem"}');
+
+    for (const resultado of [zero, negativo, extra, dataRuim]) {
+      expect(resultado.isError).toBe(true);
+      expect(JSON.parse(resultado.content)).toHaveProperty("erro");
+    }
   });
 
   it("devolve erro legível para argumento inválido, apontando o campo", async () => {
