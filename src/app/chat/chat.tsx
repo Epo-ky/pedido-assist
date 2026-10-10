@@ -12,9 +12,9 @@ const SUGESTOES = [
   "Onde está o meu pedido mais recente?",
 ];
 
-export function Chat({ nome }: { nome: string }) {
+export function Chat({ nome, historicoInicial }: { nome: string; historicoInicial: Mensagem[] }) {
   const router = useRouter();
-  const [mensagens, setMensagens] = useState<Mensagem[]>([]);
+  const [mensagens, setMensagens] = useState<Mensagem[]>(historicoInicial);
   const [texto, setTexto] = useState("");
   const [carregando, setCarregando] = useState(false);
   const fimRef = useRef<HTMLDivElement>(null);
@@ -27,11 +27,7 @@ export function Chat({ nome }: { nome: string }) {
     const message = conteudo.trim();
     if (!message || carregando) return;
 
-    // Mensagens de erro da tela não fazem parte da conversa que o modelo deve ver.
-    const history = mensagens
-      .filter((m) => !m.erro)
-      .map(({ role, content }) => ({ role, content }));
-
+    // O histórico fica no servidor: a tela só manda a mensagem nova.
     setMensagens([...mensagens, { role: "user", content: message }]);
     setTexto("");
     setCarregando(true);
@@ -40,7 +36,7 @@ export function Chat({ nome }: { nome: string }) {
       const resposta = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, history }),
+        body: JSON.stringify({ message }),
       });
 
       if (resposta.status === 401) {
@@ -77,8 +73,27 @@ export function Chat({ nome }: { nome: string }) {
     }
   }
 
+  async function limparConversa() {
+    if (carregando || !window.confirm("Apagar toda a conversa com o Volt?")) return;
+
+    try {
+      const resposta = await fetch("/api/chat", { method: "DELETE" });
+      if (resposta.ok) setMensagens([]);
+    } catch {
+      // Sem conexão: a conversa continua na tela e no servidor, e dá para tentar de novo.
+    }
+  }
+
   return (
     <section className={styles.chat}>
+      {mensagens.length > 0 && (
+        <div className={styles.acoes}>
+          <button type="button" onClick={limparConversa} disabled={carregando}>
+            Limpar conversa
+          </button>
+        </div>
+      )}
+
       <div className={styles.mensagens} aria-live="polite">
         {mensagens.length === 0 && (
           <div className={styles.boasVindas}>

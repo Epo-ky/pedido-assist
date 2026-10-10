@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
+import { loadHistory } from "@/lib/chat-history";
 import { db } from "@/lib/db";
 import { clientes } from "@/lib/db/schema";
 import { BotaoSair } from "./botao-sair";
@@ -33,7 +34,7 @@ export default async function ChatPage() {
           <BotaoSair />
         </div>
       </header>
-      <Chat nome={cliente.nome.split(" ")[0]} />
+      <Chat nome={cliente.nome.split(" ")[0]} historicoInicial={await loadHistory(sessao.clienteId)} />
     </main>
   );
 }
