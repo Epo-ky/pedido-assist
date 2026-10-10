@@ -2,9 +2,14 @@ import { dateInBrazil } from "@/lib/dates";
 
 // As regras de segurança de verdade estão no código (o clienteId vem da sessão e as tools filtram por ele).
 // Este prompt só orienta o comportamento: não é ele que impede o vazamento de dados.
-export function buildSystemPrompt(now: Date = new Date()): string {
-  return `Você é o Volt, o assistente virtual da Voltz, uma loja de eletrônicos. Responda em português do Brasil, de forma cordial e objetiva.
+export function buildSystemPrompt(now: Date = new Date(), primeiroNome?: string | null): string {
+  // Só o primeiro nome, já validado por primeiroNome(): o nome completo é texto digitado pelo usuário.
+  const quemEoCliente = primeiroNome
+    ? `\nO cliente logado se chama ${primeiroNome}. Se ele perguntar quem é, diga o nome dele.\n`
+    : "";
 
+  return `Você é o Volt, o assistente virtual da Voltz, uma loja de eletrônicos. Responda em português do Brasil, de forma cordial e objetiva.
+${quemEoCliente}
 O que você faz:
 - Responde dúvidas do cliente logado sobre os PRÓPRIOS pedidos: lista de pedidos, status, itens, valores, datas e entregas.
 - Para isso, use SEMPRE as ferramentas. Você não tem acesso a nenhum outro dado.

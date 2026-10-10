@@ -1,7 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { runChat } from "@/lib/ai/chat-loop";
 import { LlmProviderError } from "@/lib/ai/provider";
 import { getSession } from "@/lib/auth/session";
+import { pool } from "@/lib/db";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { POST } from "@/app/api/chat/route";
 
@@ -32,6 +33,10 @@ const RESULTADO = {
 
 const LIBERADO = { allowed: true, contagem: 1, retryAfterSeconds: 3600 };
 const BLOQUEADO = { allowed: false, contagem: 21, retryAfterSeconds: 600 };
+
+afterAll(async () => {
+  await pool.end();
+});
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -69,6 +74,15 @@ describe("POST /api/chat", () => {
     expect(await resposta.json()).toEqual({ resposta: "Você tem 8 pedidos." });
     expect(runChatMock).toHaveBeenCalledOnce();
     expect(runChatMock.mock.calls[0][0]).toMatchObject({ clienteId: 1, message: "meus pedidos" });
+  });
+
+  it("passa o nome do cliente lido do BANCO, ignorando um nome enviado no corpo", async () => {
+    getSessionMock.mockResolvedValue({ clienteId: 1 });
+    runChatMock.mockResolvedValue(RESULTADO);
+
+    await POST(requisicao({ message: "eu sou quem?", nomeCliente: "Invasor", nome: "Invasor" }));
+
+    expect(runChatMock.mock.calls[0][0]).toMatchObject({ nomeCliente: "Ana Souza" });
   });
 
   it("devolve 429 quando o provedor atinge o limite de uso", async () => {

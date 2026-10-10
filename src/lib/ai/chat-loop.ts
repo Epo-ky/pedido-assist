@@ -7,6 +7,7 @@ import {
   type ToolCall,
   type ToolDefinition,
 } from "./provider";
+import { primeiroNome } from "./customer-name";
 import { toPlainText } from "./plain-text";
 import { buildSystemPrompt } from "./system-prompt";
 
@@ -69,6 +70,8 @@ export async function runChat(params: {
   // Não confiável (vem do navegador): o runChat sanitiza antes de usar.
   history: unknown;
   message: string;
+  // Nome completo do cliente, lido do banco (nunca do corpo da requisição). Só o primeiro nome chega ao prompt.
+  nomeCliente?: string | null;
   now?: Date;
   log?: (entry: ChatLogEntry) => void;
   // Espera entre tentativas após uma falha passageira; os testes passam 0.
@@ -77,7 +80,7 @@ export async function runChat(params: {
   const { provider, clienteId, message, now, log = logPadrao, retryDelayMs = ESPERA_PADRAO_MS } = params;
 
   const messages: ChatMessage[] = [
-    { role: "system", content: buildSystemPrompt(now) },
+    { role: "system", content: buildSystemPrompt(now, primeiroNome(params.nomeCliente)) },
     ...sanitizeHistory(params.history),
     { role: "user", content: message.slice(0, MAX_MESSAGE_LENGTH) },
   ];

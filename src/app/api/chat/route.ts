@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { MAX_MESSAGE_LENGTH, runChat } from "@/lib/ai/chat-loop";
@@ -5,6 +6,8 @@ import { groqProvider } from "@/lib/ai/groq-provider";
 import { LlmProviderError } from "@/lib/ai/provider";
 import { getSession } from "@/lib/auth/session";
 import { esperaEmMinutos, tooManyRequests } from "@/lib/http";
+import { db } from "@/lib/db";
+import { clientes } from "@/lib/db/schema";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { CHAT_GLOBAL, CHAT_POR_CLIENTE } from "@/lib/rate-rules";
 
@@ -53,9 +56,17 @@ export async function POST(request: Request) {
       );
     }
 
+    // O nome vem do banco, a partir do cliente da sessão. Um "nome" enviado no corpo é ignorado.
+    const [cliente] = await db
+      .select({ nome: clientes.nome })
+      .from(clientes)
+      .where(eq(clientes.id, sessao.clienteId))
+      .limit(1);
+
     const resultado = await runChat({
       provider: groqProvider,
       clienteId: sessao.clienteId,
+      nomeCliente: cliente?.nome,
       history: dados.data.history ?? [],
       message: dados.data.message,
     });
