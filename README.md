@@ -6,17 +6,18 @@ O Volt é um assistente de pedidos com IA para a Voltz, uma loja fictícia de el
 um assistente que responde dúvidas sobre **os próprios pedidos**, usando dados reais do PostgreSQL
 por meio de *function calling* (tool use).
 
-> **Status:** em construção. Hoje existem o banco (schema, migrations e seed), o login, o cadastro e as rotas
-> protegidas. As tools e o chat com IA estão nas próximas fases. Veja o roteiro em [CLAUDE.md](CLAUDE.md) e as
-> decisões e problemas reais em [docs/DIARIO.md](docs/DIARIO.md).
+> **Status:** em construção. Já funcionam o login, o cadastro, o chat com o Volt (que consulta os pedidos do
+> cliente por meio de tools), os limites de uso e uma bateria de ataques de prompt injection. Faltam o deploy,
+> a mini-loja com ações e as evals. Veja o roteiro em [CLAUDE.md](CLAUDE.md) e as decisões e problemas reais em
+> [docs/DIARIO.md](docs/DIARIO.md).
 
 ## Stack
 
 - Next.js (App Router) + TypeScript
 - PostgreSQL + Drizzle ORM (migrations e seed)
-- Function calling via Groq (plano gratuito), atrás de uma interface de provedor — *fase 4*
-- Autenticação por cookie JWT assinado (`jose`) — *fase 2*
-- Vitest e GitHub Actions — *fases 3 e 7*
+- Function calling via Groq (plano gratuito), atrás de uma interface de provedor
+- Autenticação por cookie JWT assinado (`jose`) e validação com `zod`
+- Vitest (testes) — GitHub Actions e deploy ainda por vir
 
 ## Como rodar local
 
@@ -30,7 +31,8 @@ Pré-requisitos: Node.js 20+ e PostgreSQL instalado (usei a versão 18, direto n
 
 2. Crie o banco `pedido_assist` no seu PostgreSQL.
 
-3. Copie `.env.example` para `.env` e preencha a senha do seu usuário do Postgres em `DATABASE_URL`.
+3. Copie `.env.example` para `.env`, preencha a senha do seu usuário do Postgres em `DATABASE_URL`, gere um
+   `SESSION_SECRET` aleatório e coloque uma chave gratuita do Groq (console.groq.com) em `GROQ_API_KEY`.
 
 4. Crie as tabelas e popule com dados de exemplo:
 
@@ -65,6 +67,9 @@ O seed cria 3 clientes, todos com a senha `senha123` (dados fictícios, só para
 | `npm run dev` | Servidor de desenvolvimento |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | Checagem de tipos (TypeScript) |
+| `npm test` | Testes (Vitest); os de tools e rotas usam o banco com o seed aplicado |
+| `npm run security:check` | Bateria de 20 ataques de prompt injection contra o modelo real (gasta a cota do Groq) |
+| `npm run ai:test` | Chamada de teste ao modelo, com um ciclo completo de tool |
 | `npm run db:generate` | Gera uma migration a partir do `schema.ts` |
 | `npm run db:migrate` | Aplica as migrations no banco |
 | `npm run db:seed` | Apaga e recria os dados de exemplo |

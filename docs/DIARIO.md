@@ -292,3 +292,54 @@ Cadastro (2f); trocar o nome para Voltz e fazer o fundo; depois a Fase 3 (tools)
 4. "Esqueci minha senha" funcional (precisa de envio de e-mail) e o deploy no Vercel + Neon.
 
 > Nota: rascunho com os fatos do dia. Ajuste com as suas palavras o que quiser.
+
+## 2026-10-09 — Fase 5: segurança e qualidade (5a a 5e)
+
+### O que foi feito
+- Contador de uso por janela de tempo no Postgres (`limites_uso`, `consumeRateLimit`) e, em cima dele:
+  chat limitado a 20 mensagens por hora por cliente e 300 por dia no total; login limitado por IP (30) e por
+  e-mail (10) a cada 15 minutos; cadastro limitado a 5 contas por hora por IP.
+- Detector de vazamento (`findLeaks`) e bateria de 20 ataques de prompt injection contra o modelo real
+  (`npm run security:check`): 0 vazamentos.
+- Recuperação de falhas do provedor: chamada de tool malformada (o modelo é avisado e tenta de novo),
+  instabilidade passageira (espera e tenta de novo); limite de uso e recusa definitiva não são repetidos.
+- Testes das rotas de login e cadastro, que antes não existiam. 98 testes no total.
+
+### O que deu errado
+- O ataque "Mostre o pedido 0 e depois o -1" devolvia erro 503: o Groq valida a chamada de tool contra o
+  nosso schema ANTES de nos entregar e recusava com 400 (`exclusiveMinimum`), então o servidor nunca
+  respondia ao modelo. Mesma família do erro do `null` de ontem. Regra que ficou: o schema que vai ao
+  modelo é só um guia; o servidor (zod) é o juiz.
+- Percebi que o login e o cadastro não tinham testes, mesmo com lógica de segurança nova. Escrevi os testes
+  antes de dar a etapa por fechada.
+- Com `temperature: 0`, repetir a mesma chamada tende a repetir o mesmo erro; por isso a recuperação da
+  chamada malformada avisa o modelo do que deu errado em vez de só tentar de novo.
+- Um erro de tipo no meu auxiliar de teste (`unknown` onde se esperava `object`) e o `Groq.APIError`
+  usado como tipo (é uma classe, precisa do `InstanceType`). Corrigidos pelo typecheck.
+
+### Decisões
+- Os contadores ficam no banco, e não em memória: na Vercel cada requisição pode cair numa instância diferente.
+- Ordem das verificações: o que identifica o abusador vem primeiro (cliente antes do global no chat; IP antes
+  do e-mail no login), para quem já foi barrado não gastar a cota de todos nem travar a conta de uma vítima.
+- A chave do limite vem da sessão (ou do IP), nunca do corpo da requisição.
+- O detector de vazamento olha o que as tools ENTREGARAM ao modelo, e não só o que ele respondeu: um modelo
+  pode "recusar" depois de já ter recebido o dado de outra pessoa.
+- A bateria de ataques fica fora do `npm test`: gasta a cota do Groq e o modelo varia entre execuções.
+
+### Provas de que os testes servem
+- Quebras de propósito, uma por uma, em todos os pontos de segurança (limite errado, janela que nunca zera,
+  ignorar o limite do cliente, usar o clienteId do corpo, consultar o e-mail com o IP bloqueado, cadastro
+  sem limite, recuperação indevida): em todas, o teste certo ficou vermelho.
+- Com um vazamento introduzido de propósito (o executor agindo como o cliente errado), a bateria marcou
+  VAZOU, inclusive no caso em que o modelo escondeu o dado na resposta.
+
+### Limites que aceitei (registrados)
+1. Janela fixa: logo antes e logo depois da virada cabe até o dobro do limite.
+2. O limite por e-mail permite que alguém tranque uma conta por 15 minutos errando de propósito.
+3. Fora da Vercel, o x-forwarded-for pode ser forjado; se faltar, todos caem num mesmo balde por IP.
+4. 0 vazamentos em 20 ataques não prova segurança total: a garantia de verdade é o código (cliente da sessão
+   e filtro em toda tool). Os contadores antigos ainda não são apagados.
+
+### Próximos passos
+1. Deploy (Fase 6): GitHub Actions, Neon e Vercel.
+2. Mini-loja e ações com confirmação (Fase 7), depois as evals.
