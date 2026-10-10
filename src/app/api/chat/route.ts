@@ -15,6 +15,10 @@ const bodySchema = z.object({
   history: z.array(z.unknown()).max(100).optional(),
 });
 
+// Tempo máximo da função na Vercel (segundos). Uma pergunta pode fazer várias idas ao modelo e ao banco,
+// e o primeiro acesso depois de um tempo parado ainda espera o Neon acordar.
+export const maxDuration = 30;
+
 export async function POST(request: Request) {
   const sessao = await getSession();
   if (!sessao) {
