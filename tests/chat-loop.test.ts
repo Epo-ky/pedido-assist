@@ -141,6 +141,15 @@ describe("runChat", () => {
     expect(resultado.reply).toContain("não consegui concluir");
   });
 
+  it("entrega a resposta sem Markdown, mesmo que o modelo desobedeça o prompt", async () => {
+    const { provider } = modeloFalso(texto("O pedido 8 custou **R$ 179,80**.\n* Mouse sem fio"));
+    const { log } = registrarLogs();
+
+    const resultado = await runChat({ provider, clienteId: anaId, history: [], message: "oi", log });
+
+    expect(resultado.reply).toBe("O pedido 8 custou R$ 179,80.\n- Mouse sem fio");
+  });
+
   it("usa uma mensagem padrão quando o modelo responde vazio", async () => {
     const { provider } = modeloFalso(texto(null));
     const { log } = registrarLogs();

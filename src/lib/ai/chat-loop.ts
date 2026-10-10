@@ -7,6 +7,7 @@ import {
   type ToolCall,
   type ToolDefinition,
 } from "./provider";
+import { toPlainText } from "./plain-text";
 import { buildSystemPrompt } from "./system-prompt";
 
 // Limite de voltas modelo -> tool -> modelo, para um modelo teimoso não gastar a cota nem prender a requisição.
@@ -108,7 +109,7 @@ export async function runChat(params: {
     // Sem pedido de tool: o modelo terminou e esta é a resposta final.
     if (resposta.toolCalls.length === 0) {
       return {
-        reply: resposta.content?.trim() || RESPOSTA_SEM_CONTEUDO,
+        reply: toPlainText(resposta.content ?? "").trim() || RESPOSTA_SEM_CONTEUDO,
         usage,
         toolCalls,
         hitIterationLimit: false,
