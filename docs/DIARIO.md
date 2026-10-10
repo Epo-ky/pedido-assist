@@ -402,3 +402,42 @@ Cadastro (2f); trocar o nome para Voltz e fazer o fundo; depois a Fase 3 (tools)
 1. A primeira requisição depois de um tempo parado é mais lenta: o Neon escala a zero e precisa "acordar".
 2. O aviso de SSL do `pg` (sobre uma mudança de versão futura) aparece nos logs; é só informativo.
 3. Próximo: mini-loja e ações com confirmação (Fase 7) e, depois, as evals.
+
+## 2026-10-10 (madrugada) — Teste manual do site e correções
+
+### O que foi feito
+- Fiz uma bateria de testes manuais no site em produção (PC e celular): criar conta, entrar, conversar com o Volt
+  com a Ana e com uma conta sem pedidos, tentar enganá-lo sobre o preço de um pedido.
+- Correções que saíram dela: o Volt não promete mais o que não pode fazer; as respostas saem sem Markdown (pelo
+  código); o Volt sabe o primeiro nome do cliente; botão de tema claro e escuro.
+
+### O que deu errado (achado nos testes manuais)
+- Quando eu disse "acho que o pedido 8 era 50 reais mais barato" e depois "pode alterar?", o Volt respondeu que
+  podia "registrar a solicitação" e que eu "receberia um retorno por e-mail ou telefone em até 48 horas", e antes
+  mandou "entrar em contato com o SAC" e "enviar o comprovante". Nada disso existe: ele só consulta e a loja é
+  fictícia. Eu não percebi o problema na hora; ele só ficou claro na revisão do que foi dito. Era o caso mais
+  grave: se eu respondesse "sim", ele diria que abriu algo que não abriu. Nenhum dos meus 20 ataques cobria isso,
+  porque eram todos sobre vazar dados, e este é um erro de honestidade.
+- Apareceram os asteriscos de Markdown (`**R$ 179,80**`) na tela, mesmo com o prompt pedindo texto simples.
+- Na conta sem pedidos, o Volt inventou que o pedido "ainda pode não estar registrado no sistema".
+- Eu não achei como trocar o tema claro e escuro: o site seguia o tema do Windows, mas não havia botão.
+- A primeira tentativa de escrever o arquivo de teste e o regex com `sed` e `\n` estragou o texto (a barra
+  foi comida); os testes e o typecheck pegaram na hora. Também a flag `s` de regex não existe no alvo
+  de compilação do projeto; troquei por `[\s\S]`.
+
+### Decisões
+- O detector de promessas indevidas (`findFalsePromises`) foi escrito e testado ANTES da correção, com a resposta
+  real do meu teste manual, e a bateria de ataques ganhou 6 casos de honestidade. Contra o prompt antigo ela
+  falhou (2 promessas); com o novo passou em duas rodadas seguidas. O modelo varia entre execuções, por isso o
+  detector automático.
+- Tirar o Markdown pelo código, e não só pelo prompt: prompt é pedido, não garantia.
+- O nome do cliente chega ao prompt só como PRIMEIRA palavra, e só se for feita de letras. O nome é texto digitado
+  no cadastro e não pode virar uma instrução para o modelo. Ele vem do banco (cliente da sessão), nunca do corpo.
+- Tema: a escolha manual vale mais que a do sistema e fica no navegador; um script no head a aplica antes da
+  página aparecer, para não piscar o tema errado.
+
+### Pendências
+1. A conta nova abre sem pedidos: a mini-loja (Fase 7) resolve de verdade.
+2. O histórico do chat some ao recarregar a página (não é guardado no servidor).
+3. Nomes com maiúsculas estranhas ("Evando Pereira De Oliveira") aparecem como foram digitados no cadastro.
+4. Próximo: mini-loja e ações com confirmação (Fase 7), depois as evals.
