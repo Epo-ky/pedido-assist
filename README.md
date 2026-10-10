@@ -1,5 +1,7 @@
 # Voltz
 
+**Demonstração no ar: https://pedido-assist.vercel.app** — entre com `ana@exemplo.com` / `senha123` (dados fictícios) ou crie uma conta.
+
 [![CI](https://github.com/Epo-ky/pedido-assist/actions/workflows/ci.yml/badge.svg)](https://github.com/Epo-ky/pedido-assist/actions/workflows/ci.yml)
 
 > Projeto de portfólio chamado `pedido-assist` no repositório. **Voltz** é a loja fictícia e **Volt** é o assistente.
@@ -9,8 +11,8 @@ um assistente que responde dúvidas sobre **os próprios pedidos**, usando dados
 por meio de *function calling* (tool use).
 
 > **Status:** em construção. Já funcionam o login, o cadastro, o chat com o Volt (que consulta os pedidos do
-> cliente por meio de tools), os limites de uso e uma bateria de ataques de prompt injection. Faltam o deploy,
-> a mini-loja com ações e as evals. Veja o roteiro em [CLAUDE.md](CLAUDE.md) e as decisões e problemas reais em
+> cliente por meio de tools), os limites de uso e uma bateria de ataques de prompt injection. O site está no ar (Vercel + Neon). Faltam a
+> mini-loja com ações e as evals. Veja o roteiro em [CLAUDE.md](CLAUDE.md) e as decisões e problemas reais em
 > [docs/DIARIO.md](docs/DIARIO.md).
 
 ## Stack
@@ -19,7 +21,8 @@ por meio de *function calling* (tool use).
 - PostgreSQL + Drizzle ORM (migrations e seed)
 - Function calling via Groq (plano gratuito), atrás de uma interface de provedor
 - Autenticação por cookie JWT assinado (`jose`) e validação com `zod`
-- Vitest (testes) e GitHub Actions (CI com Postgres de teste a cada push) — deploy ainda por vir
+- Vitest (testes) e GitHub Actions (CI com Postgres de teste a cada push)
+- Deploy: Vercel (região de São Paulo) e Neon (Postgres na nuvem, plano gratuito)
 
 ## Como rodar local
 
@@ -86,3 +89,12 @@ O schema está em [`src/lib/db/schema.ts`](src/lib/db/schema.ts).
 
 Diagrama do fluxo (mensagem → LLM → tool → banco → resposta), como a segurança por cliente funciona e
 foi testada, resumo do que deu errado no caminho, print e link do deploy.
+
+## Deploy
+
+O projeto está na Vercel e o banco no Neon (os dois no plano gratuito). A cada push na `main`, a Vercel publica
+sozinha e o GitHub Actions roda os testes. As variáveis de ambiente (`DATABASE_URL`, `SESSION_SECRET` e
+`GROQ_API_KEY`) ficam só no painel da Vercel, nunca no repositório.
+
+Como o plano gratuito do modelo tem limite de uso, o chat aceita 20 mensagens por hora por cliente e 300 por dia
+no total; ao atingir, o Volt avisa em português e libera de novo depois.

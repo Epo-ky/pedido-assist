@@ -374,3 +374,31 @@ Cadastro (2f); trocar o nome para Voltz e fazer o fundo; depois a Fase 3 (tools)
 ### Próximos passos
 1. Criar o banco no Neon e aplicar as migrations e o seed (eu guio; a conta é minha).
 2. Subir na Vercel com as variáveis de ambiente (`DATABASE_URL`, `SESSION_SECRET`, `GROQ_API_KEY`).
+
+## 2026-10-10 (noite) — Fase 6: Neon e Vercel (o site no ar)
+
+### O que foi feito
+- Banco criado no Neon (plano gratuito, região de São Paulo); migrations e seed aplicados nele.
+- Projeto importado na Vercel com as 3 variáveis de ambiente; `vercel.json` com a região `gru1` e a rota do chat
+  com `maxDuration` de 30 s. Site no ar em https://pedido-assist.vercel.app.
+- Testei o site de fora: login, cookie Secure e HttpOnly, chat com os pedidos, pergunta de atraso, dois ataques de
+  prompt injection e um `clienteId` forjado no corpo. Tudo certo; o chat responde em 1,5 a 3 s.
+
+### O que deu errado
+- Eu não conseguia abrir o `.env.neon` para colar a string do banco; resolvi abrindo pelo editor.
+- Eu me perdi com a quantidade de passos para levar 3 valores para a Vercel. Foi simplificado: um único arquivo
+  temporário com as 3 linhas, colado de uma vez no painel, e apagado logo depois do deploy.
+- Eu tinha copiado a string do Neon COM pooler (serve para a Vercel), mas as migrations pedem a string direta
+  (sem `-pooler`). Em vez de refazer, a URL direta foi montada em memória a partir da primeira.
+
+### Decisões
+- O seed e as migrations no Neon rodaram com uma proteção: o comando aborta se o destino não for `neon.tech`, para
+  nunca apagar o banco local por engano (o seed apaga e recria tudo). Conferi depois que o banco local ficou intacto.
+- As variáveis do Neon ficam num arquivo separado (`.env.neon`, fora do git) e não no `.env` principal.
+- Vercel na mesma região do banco (São Paulo), porque a região padrão (EUA) somaria latência a cada consulta.
+- Banco com pooler para a Vercel (muitas conexões curtas) e conexão direta para as migrations.
+
+### Pendências
+1. A primeira requisição depois de um tempo parado é mais lenta: o Neon escala a zero e precisa "acordar".
+2. O aviso de SSL do `pg` (sobre uma mudança de versão futura) aparece nos logs; é só informativo.
+3. Próximo: mini-loja e ações com confirmação (Fase 7) e, depois, as evals.
