@@ -3,6 +3,7 @@ import {
   type ChatMessage,
   type LlmProvider,
   LlmProviderError,
+  type LlmProviderErrorKind,
   type ProviderResponse,
   type ToolDefinition,
 } from "./provider";
@@ -26,6 +27,17 @@ function getClient(): Groq {
 
   client ??= new Groq({ apiKey });
   return client;
+}
+
+// Traduz o erro do Groq para o tipo neutro, para o loop decidir se vale tentar de novo.
+export function classificarErro(error: InstanceType<typeof Groq.APIError>): LlmProviderErrorKind {
+  const codigo = (error.error as { error?: { code?: string } } | undefined)?.error?.code;
+
+  if (error.status === 429) return "rate_limit";
+  if (error.status === 400 && codigo === "tool_use_failed") return "invalid_tool_call";
+  // Sem status = a conexão caiu antes de haver resposta; 5xx = problema do lado deles.
+  if (error.status === undefined || error.status >= 500) return "unavailable";
+  return "rejected";
 }
 
 function toGroqMessage(message: ChatMessage): GroqMessage {
@@ -78,8 +90,7 @@ export const groqProvider: LlmProvider = {
       });
     } catch (error) {
       if (error instanceof Groq.APIError) {
-        const kind = error.status === 429 ? "rate_limit" : "unavailable";
-        throw new LlmProviderError(kind, `Groq respondeu com erro (${error.status ?? "sem status"})`, {
+        throw new LlmProviderError(classificarErro(error), `Groq respondeu com erro (${error.status ?? "sem status"})`, {
           cause: error,
         });
       }

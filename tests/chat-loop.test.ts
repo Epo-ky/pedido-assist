@@ -5,10 +5,17 @@ import {
   MAX_HISTORY_MESSAGES,
   MAX_ITERATIONS,
   MAX_MESSAGE_LENGTH,
+  MAX_PROVIDER_ATTEMPTS,
   runChat,
   sanitizeHistory,
 } from "@/lib/ai/chat-loop";
-import type { ChatMessage, LlmProvider, ProviderResponse } from "@/lib/ai/provider";
+import {
+  type ChatMessage,
+  type LlmProvider,
+  LlmProviderError,
+  type LlmProviderErrorKind,
+  type ProviderResponse,
+} from "@/lib/ai/provider";
 import { db, pool } from "@/lib/db";
 import { clientes } from "@/lib/db/schema";
 import { listOrders } from "@/lib/tools/list-orders";
@@ -227,5 +234,87 @@ describe("sanitizeHistory", () => {
   it("devolve lista vazia quando o histórico não é uma lista", () => {
     expect(sanitizeHistory("qualquer coisa")).toEqual([]);
     expect(sanitizeHistory(undefined)).toEqual([]);
+  });
+});
+
+describe("recuperação de falhas do provedor", () => {
+  const falha = (kind: LlmProviderErrorKind) => new LlmProviderError(kind, `falha ${kind}`);
+
+  // Modelo que, em cada chamada, ou lança o erro ou devolve a resposta, na ordem. Repete o último item.
+  function modeloInstavel(...passos: (Error | ProviderResponse)[]) {
+    const recebido: ChatMessage[][] = [];
+    let proximo = 0;
+    const provider: LlmProvider = {
+      async complete({ messages }) {
+        recebido.push(structuredClone(messages));
+        const passo = passos[Math.min(proximo++, passos.length - 1)];
+        if (passo instanceof Error) throw passo;
+        return passo;
+      },
+    };
+    return { provider, recebido };
+  }
+
+  it("avisa o modelo e tenta de novo quando ele gera uma chamada de tool malformada", async () => {
+    const { provider, recebido } = modeloInstavel(falha("invalid_tool_call"), texto("Corrigido."));
+    const { logs, log } = registrarLogs();
+
+    const resultado = await runChat({ provider, clienteId: anaId, history: [], message: "oi", log, retryDelayMs: 0 });
+
+    expect(resultado.reply).toBe("Corrigido.");
+    expect(recebido).toHaveLength(2);
+    // Com temperature 0, repetir igual daria o mesmo erro: a segunda chamada leva o aviso do que deu errado.
+    expect(recebido[0].some((m) => m.role === "system" && m.content.includes("malformada"))).toBe(false);
+    expect(recebido[1].some((m) => m.role === "system" && m.content.includes("malformada"))).toBe(true);
+    expect(logs).toContainEqual({ evento: "llm_erro", iteracao: 1, tentativa: 1, tipo: "invalid_tool_call" });
+  });
+
+  it("desiste depois de MAX_PROVIDER_ATTEMPTS chamadas malformadas seguidas", async () => {
+    const { provider, recebido } = modeloInstavel(falha("invalid_tool_call"));
+    const { log } = registrarLogs();
+
+    await expect(
+      runChat({ provider, clienteId: anaId, history: [], message: "oi", log, retryDelayMs: 0 }),
+    ).rejects.toMatchObject({ kind: "invalid_tool_call" });
+    expect(recebido).toHaveLength(MAX_PROVIDER_ATTEMPTS);
+  });
+
+  it("tenta de novo quando o serviço fica indisponível por um instante", async () => {
+    const { provider, recebido } = modeloInstavel(falha("unavailable"), falha("unavailable"), texto("Voltei."));
+    const { log } = registrarLogs();
+
+    const resultado = await runChat({ provider, clienteId: anaId, history: [], message: "oi", log, retryDelayMs: 0 });
+
+    expect(resultado.reply).toBe("Voltei.");
+    expect(recebido).toHaveLength(3);
+  });
+
+  it("não insiste no limite de uso: sobe o erro na primeira vez", async () => {
+    const { provider, recebido } = modeloInstavel(falha("rate_limit"), texto("nunca chega aqui"));
+    const { log } = registrarLogs();
+
+    await expect(
+      runChat({ provider, clienteId: anaId, history: [], message: "oi", log, retryDelayMs: 0 }),
+    ).rejects.toMatchObject({ kind: "rate_limit" });
+    expect(recebido).toHaveLength(1);
+  });
+
+  it("não insiste numa recusa definitiva do serviço", async () => {
+    const { provider, recebido } = modeloInstavel(falha("rejected"), texto("nunca chega aqui"));
+    const { log } = registrarLogs();
+
+    await expect(
+      runChat({ provider, clienteId: anaId, history: [], message: "oi", log, retryDelayMs: 0 }),
+    ).rejects.toMatchObject({ kind: "rejected" });
+    expect(recebido).toHaveLength(1);
+  });
+
+  it("não esconde erros que não são do provedor (bugs do nosso código)", async () => {
+    const { provider } = modeloInstavel(new TypeError("bug nosso"));
+    const { log } = registrarLogs();
+
+    await expect(
+      runChat({ provider, clienteId: anaId, history: [], message: "oi", log, retryDelayMs: 0 }),
+    ).rejects.toThrow("bug nosso");
   });
 });

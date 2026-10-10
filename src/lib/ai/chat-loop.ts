@@ -1,11 +1,26 @@
 import { executeTool, toolDefinitions } from "@/lib/tools";
-import type { ChatMessage, LlmProvider, ToolCall } from "./provider";
+import {
+  type ChatMessage,
+  type LlmProvider,
+  LlmProviderError,
+  type ProviderResponse,
+  type ToolCall,
+  type ToolDefinition,
+} from "./provider";
 import { buildSystemPrompt } from "./system-prompt";
 
 // Limite de voltas modelo -> tool -> modelo, para um modelo teimoso não gastar a cota nem prender a requisição.
 export const MAX_ITERATIONS = 6;
 export const MAX_HISTORY_MESSAGES = 20;
 export const MAX_MESSAGE_LENGTH = 2000;
+// Tentativas por chamada ao modelo quando ele falha de um jeito que vale a pena repetir.
+export const MAX_PROVIDER_ATTEMPTS = 3;
+const ESPERA_PADRAO_MS = 500;
+
+const AVISO_CHAMADA_INVALIDA =
+  "Aviso do sistema: a sua última chamada de ferramenta estava malformada e foi recusada. " +
+  "Tente de novo com argumentos válidos (números inteiros positivos para pedido_id, datas como AAAA-MM-DD), " +
+  "ou responda ao cliente sem usar ferramenta.";
 
 const RESPOSTA_SEM_CONTEUDO = "Desculpe, não consegui gerar uma resposta. Pode tentar de novo?";
 const RESPOSTA_LIMITE =
@@ -15,7 +30,8 @@ export type HistoryMessage = { role: "user" | "assistant"; content: string };
 
 export type ChatLogEntry =
   | { evento: "llm"; iteracao: number; tokensEntrada: number; tokensSaida: number; duracaoMs: number }
-  | { evento: "tool"; tool: string; argumentos: string; duracaoMs: number; erro: boolean };
+  | { evento: "tool"; tool: string; argumentos: string; duracaoMs: number; erro: boolean }
+  | { evento: "llm_erro"; iteracao: number; tentativa: number; tipo: string };
 
 export type ChatResult = {
   reply: string;
@@ -54,8 +70,10 @@ export async function runChat(params: {
   message: string;
   now?: Date;
   log?: (entry: ChatLogEntry) => void;
+  // Espera entre tentativas após uma falha passageira; os testes passam 0.
+  retryDelayMs?: number;
 }): Promise<ChatResult> {
-  const { provider, clienteId, message, now, log = logPadrao } = params;
+  const { provider, clienteId, message, now, log = logPadrao, retryDelayMs = ESPERA_PADRAO_MS } = params;
 
   const messages: ChatMessage[] = [
     { role: "system", content: buildSystemPrompt(now) },
@@ -68,7 +86,14 @@ export async function runChat(params: {
 
   for (let iteracao = 1; iteracao <= MAX_ITERATIONS; iteracao++) {
     const inicio = Date.now();
-    const resposta = await provider.complete({ messages, tools: toolDefinitions });
+    const resposta = await completeWithRecovery({
+      provider,
+      messages,
+      tools: toolDefinitions,
+      iteracao,
+      log,
+      retryDelayMs,
+    });
 
     usage.inputTokens += resposta.usage.inputTokens;
     usage.outputTokens += resposta.usage.outputTokens;
@@ -99,6 +124,40 @@ export async function runChat(params: {
   }
 
   return { reply: RESPOSTA_LIMITE, usage, toolCalls, hitIterationLimit: true };
+}
+
+// Chama o modelo e se recupera das falhas em que insistir ajuda. Com temperature 0, repetir a MESMA chamada
+// tende a dar o MESMO erro, então a chamada malformada é corrigida avisando o modelo do que deu errado.
+async function completeWithRecovery(params: {
+  provider: LlmProvider;
+  messages: ChatMessage[];
+  tools: ToolDefinition[];
+  iteracao: number;
+  log: (entry: ChatLogEntry) => void;
+  retryDelayMs: number;
+}): Promise<ProviderResponse> {
+  const { provider, messages, tools, iteracao, log, retryDelayMs } = params;
+
+  for (let tentativa = 1; ; tentativa++) {
+    try {
+      return await provider.complete({ messages, tools });
+    } catch (error) {
+      // Limite de uso (insistir só piora) e recusa definitiva (insistir não adianta) sobem direto.
+      const recuperavel =
+        error instanceof LlmProviderError &&
+        (error.kind === "invalid_tool_call" || error.kind === "unavailable");
+
+      if (!recuperavel || tentativa >= MAX_PROVIDER_ATTEMPTS) throw error;
+
+      log({ evento: "llm_erro", iteracao, tentativa, tipo: error.kind });
+
+      if (error.kind === "invalid_tool_call") {
+        messages.push({ role: "system", content: AVISO_CHAMADA_INVALIDA });
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, retryDelayMs * tentativa));
+      }
+    }
+  }
 }
 
 async function executarChamada(

@@ -33,11 +33,16 @@ export interface LlmProvider {
   }): Promise<ProviderResponse>;
 }
 
-// Erro neutro do provedor: a rota decide a resposta HTTP sem conhecer o fornecedor.
-// "rate_limit" = limite de uso (ex.: 429 do plano gratuito); "unavailable" = qualquer outra falha do serviço.
+// Erro neutro do provedor: quem usa decide o que fazer sem conhecer o fornecedor.
+// - rate_limit: limite de uso (ex.: 429 do plano gratuito). Insistir só piora.
+// - unavailable: falha passageira do serviço ou da rede. Vale tentar de novo.
+// - invalid_tool_call: o modelo gerou uma chamada de tool malformada. Vale avisá-lo e deixá-lo tentar de novo.
+// - rejected: o serviço recusou o pedido de forma definitiva (ex.: chave inválida). Insistir não adianta.
+export type LlmProviderErrorKind = "rate_limit" | "unavailable" | "invalid_tool_call" | "rejected";
+
 export class LlmProviderError extends Error {
   constructor(
-    readonly kind: "rate_limit" | "unavailable",
+    readonly kind: LlmProviderErrorKind,
     message: string,
     options?: { cause?: unknown },
   ) {
