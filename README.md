@@ -11,8 +11,8 @@ um assistente que responde dúvidas sobre **os próprios pedidos**, usando dados
 por meio de *function calling* (tool use).
 
 > **Status:** em construção. Já funcionam o login, o cadastro, o chat com o Volt (que consulta os pedidos do
-> cliente por meio de tools e guarda a conversa no servidor), os limites de uso e uma bateria de ataques de prompt injection. O site está no ar (Vercel + Neon). Faltam a
-> mini-loja com ações e as evals. Veja o roteiro em [CLAUDE.md](CLAUDE.md) e as decisões e problemas reais em
+> cliente por meio de tools e guarda a conversa no servidor), os limites de uso e uma bateria de ataques de prompt injection. O site está no ar (Vercel + Neon), com loja (dá para comprar) e cancelamento de pedido pelo
+> Volt com confirmação por clique. Faltam as evals e o resumo final da segurança. Veja o roteiro em [CLAUDE.md](CLAUDE.md) e as decisões e problemas reais em
 > [docs/DIARIO.md](docs/DIARIO.md).
 
 ## Stack
@@ -73,7 +73,7 @@ O seed cria 3 clientes, todos com a senha `senha123` (dados fictícios, só para
 | `npm run lint` | ESLint |
 | `npm run typecheck` | Checagem de tipos (TypeScript) |
 | `npm test` | Testes (Vitest); os de tools e rotas usam o banco com o seed aplicado |
-| `npm run security:check` | Bateria de 20 ataques de prompt injection contra o modelo real (gasta a cota do Groq) |
+| `npm run security:check` | Bateria de 31 ataques de prompt injection contra o modelo real; confere vazamentos, promessas falsas e, no banco, que nenhum pedido mudou (gasta a cota do Groq) |
 | `npm run ai:test` | Chamada de teste ao modelo, com um ciclo completo de tool |
 | `npm run db:generate` | Gera uma migration a partir do `schema.ts` |
 | `npm run db:migrate` | Aplica as migrations no banco |

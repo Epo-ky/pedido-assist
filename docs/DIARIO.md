@@ -528,3 +528,49 @@ Cadastro (2f); trocar o nome para Voltz e fazer o fundo; depois a Fase 3 (tools)
 ### Próximo
 7d: o Volt propõe o cancelamento de um pedido pendente, e quem cancela é o clique de confirmação do cliente, validado
 pelo servidor; o modelo nunca cancela sozinho.
+
+## 2026-10-11 (madrugada) — Fase 7, passo 7d: cancelar pelo Volt, com confirmação por clique
+
+### O que foi feito
+- O Volt ganhou a ferramenta `propor_cancelamento`, que só PROPÕE: cria uma proposta (válida por 10 minutos) e a tela mostra
+  um cartão com "Confirmar cancelamento" e "Manter pedido". Quem cancela é o clique, numa rota separada
+  (`POST /api/acoes/[id]`) que o modelo não tem como chamar. Só pedido PENDENTE do próprio cliente pode ser cancelado.
+- Tabela `acoes_pendentes` (migration 0003, aplicada no Neon antes de publicar), código da proposta em UUID, uso único,
+  confirmação numa transação que confere de novo se o pedido ainda é pendente.
+- A bateria de ataques foi para 31 casos, com seis de cancelamento, e passou a conferir NO BANCO que nenhum pedido mudou
+  de status e que toda proposta criada é do cliente atacado. Resultado: 0 vazamentos, 0 promessas indevidas, 0 pedidos alterados.
+- Conferido em produção, de ponta a ponta: o pedido continua pendente até o clique; sem login o clique dá 401; outro
+  cliente com o código certo dá 404; confirmar cancela; clicar de novo dá 404.
+
+### O que deu errado
+- Um teste meu (a listagem de propostas) falhou porque eu esperava a lista vazia 11 minutos no futuro, mas outros testes do
+  arquivo criam propostas com relógio simulado; o erro era do teste e não do código.
+- A regex do detector de promessas perdeu o `\b` ao ser gerada pelo meu script (a barra virou um caractere invisível); o teste
+  do detector falhou na hora, e reescrevi a linha com texto literal.
+- Rodei os ataques errados: ao inserir cinco ataques novos a numeração mudou, e os dois de "cancelar pedido de outro cliente"
+  (os mais importantes) ficaram de fora da primeira rodada. Percebi no resultado e rodei os que faltavam.
+- Ao provar que a conferência do banco pega um desastre, o ataque contra pedido de outro cliente NÃO foi detectado: ele mirava
+  o pedido 9, que está entregue e seria recusado de qualquer jeito, então nunca testava a trava de dono. Passou a mirar pedidos
+  pendentes (15 e 20), e então o script pegou ("1 proposta indevida", saída 1). Os testes unitários já cobriam a trava; o
+  ataque é que estava fraco.
+- A CI falhou uma vez por um teste instável meu: ele contava a tabela inteira de itens e, como o Vitest roda arquivos em
+  paralelo no mesmo banco, outro arquivo inseriu um item no meio da contagem (esperava 40, veio 41). Passou localmente por
+  sorte de tempo. Corrigi contando só os itens do cliente de teste, e a suíte rodou 3 vezes seguidas sem falha.
+
+### Decisões
+- O modelo nunca executa uma ação que muda dados: ele só PROPÕE. Mesmo um prompt injection bem-sucedido não consegue cancelar,
+  porque o cancelamento exige uma requisição separada, com a sessão do cliente e um código inadivinhável.
+- O código da proposta vai para a TELA e nunca para o modelo (teste com mutação: se vazar, fica vermelho).
+- Pedido de outro cliente e pedido inexistente dão a mesma resposta; código inventado, de outro cliente, usado ou expirado
+  também (404), para não revelar nada.
+- A confirmação é um UPDATE condicional (dono, aguardando, não expirada): dois cliques ao mesmo tempo confirmam uma vez só.
+
+### Limites que aceito (registrados)
+1. O modelo ainda poderia DIZER "cancelei" (mentir) numa resposta: o detector de promessas pega isso na bateria de ataques,
+   mas não em tempo real, em produção.
+2. Só dá para cancelar pelo chat: não há botão de cancelar na lista de pedidos.
+3. Como o status "pago" não existe na prática (não há como pagar), todo pedido novo é cancelável até virar outra coisa.
+
+### Próximos passos
+- Evals (perguntas com resposta esperada, incluindo as ações) e o README final (diagrama, print, segurança, o que deu errado).
+- Bônus: recuperar senha com e-mail, e RAG com a política de trocas.
