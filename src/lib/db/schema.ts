@@ -110,3 +110,28 @@ export const mensagensChat = pgTable(
   },
   (tabela) => [index("mensagens_chat_cliente_id_idx").on(tabela.clienteId, tabela.id)],
 );
+
+export const tipoAcao = pgEnum("tipo_acao", ["cancelar_pedido"]);
+export const resultadoAcao = pgEnum("resultado_acao", ["confirmada", "recusada"]);
+
+// Propostas de ação que o assistente fez e que SÓ o clique do cliente pode executar. O modelo cria a proposta
+// (e só para um pedido do próprio cliente); confirmar ou recusar é uma requisição separada, vinda da tela.
+// "resultado" nulo = ainda aguardando. O id é um UUID aleatório: quem não recebeu a proposta não consegue adivinhá-lo.
+export const acoesPendentes = pgTable(
+  "acoes_pendentes",
+  {
+    id: text().primaryKey(),
+    clienteId: integer("cliente_id")
+      .notNull()
+      .references(() => clientes.id, { onDelete: "cascade" }),
+    tipo: tipoAcao().notNull(),
+    pedidoId: integer("pedido_id")
+      .notNull()
+      .references(() => pedidos.id, { onDelete: "cascade" }),
+    criadaEm: timestamp("criada_em", { withTimezone: true }).notNull().defaultNow(),
+    expiraEm: timestamp("expira_em", { withTimezone: true }).notNull(),
+    resultado: resultadoAcao(),
+    resolvidaEm: timestamp("resolvida_em", { withTimezone: true }),
+  },
+  (tabela) => [index("acoes_pendentes_cliente_id_idx").on(tabela.clienteId)],
+);
