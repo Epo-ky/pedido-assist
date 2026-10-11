@@ -15,7 +15,8 @@
     "db:seed": "tsx --env-file=.env scripts/seed.ts",
     "db:test": "tsx --env-file=.env scripts/test-db.ts",
     "ai:test": "tsx --env-file=.env scripts/test-llm.ts",
-    "security:check": "tsx --env-file=.env scripts/security-check.ts"
+    "security:check": "tsx --env-file=.env scripts/security-check.ts",
+    "evals": "tsx --env-file=.env evals/run.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 !.env.example
+
+# Resultado da última execução das evals (muda a cada rodada)
+evals/ultimo-resultado.json
