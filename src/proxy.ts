@@ -7,7 +7,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessao = await verifySession(request.cookies.get(SESSION_COOKIE)?.value);
 
-  if (pathname.startsWith("/chat") && !sessao) {
+  if ((pathname.startsWith("/chat") || pathname.startsWith("/loja")) && !sessao) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
@@ -19,5 +19,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/chat/:path*", "/login", "/cadastro"],
+  matcher: ["/chat/:path*", "/loja/:path*", "/login", "/cadastro"],
 };

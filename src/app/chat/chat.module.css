@@ -191,3 +191,10 @@
 .acoes button:disabled {
   cursor: not-allowed;
 }
+
+/* No celular, o botão flutuante de tema (canto inferior direito) cobriria o campo de mensagem e o botão Enviar. */
+@media (max-width: 640px) {
+  .pagina {
+    padding-bottom: 68px;
+  }
+}

@@ -1,0 +1,64 @@
+.cabecalho {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+}
+
+.esquerda {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.marca {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.navegacao {
+  display: flex;
+  gap: 4px;
+}
+
+.link {
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  opacity: 0.7;
+}
+
+.link:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+.ativo {
+  opacity: 1;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+
+.usuario {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.9rem;
+}
+
+.usuario button {
+  padding: 7px 14px;
+  font-size: 0.9rem;
+  color: inherit;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--foreground) 30%, transparent);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.usuario button:hover {
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+}

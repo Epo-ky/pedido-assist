@@ -4,7 +4,7 @@ import { getSession } from "@/lib/auth/session";
 import { loadHistory } from "@/lib/chat-history";
 import { db } from "@/lib/db";
 import { clientes } from "@/lib/db/schema";
-import { BotaoSair } from "./botao-sair";
+import { Cabecalho } from "../cabecalho";
 import { Chat } from "./chat";
 import styles from "./chat.module.css";
 
@@ -27,13 +27,7 @@ export default async function ChatPage() {
 
   return (
     <main className={styles.pagina}>
-      <header className={styles.cabecalho}>
-        <span className={styles.marca}>Voltz</span>
-        <div className={styles["usuario-info"]}>
-          <span>{cliente.nome}</span>
-          <BotaoSair />
-        </div>
-      </header>
+      <Cabecalho nome={cliente.nome} atual="chat" />
       <Chat nome={cliente.nome.split(" ")[0]} historicoInicial={await loadHistory(sessao.clienteId)} />
     </main>
   );
