@@ -12,6 +12,16 @@ let bId: number;
 let produtoBarato: { id: number; preco: string }; // Cabo HDMI, R$ 29,90
 let produtoCaro: { id: number; preco: string };
 
+// Só os itens dos pedidos DESTE cliente de teste. Contar a tabela inteira seria instável: o Vitest roda vários arquivos
+// de teste ao mesmo tempo no mesmo banco, e outro arquivo pode inserir itens no meio da contagem.
+async function itensDe(clienteId: number) {
+  return db
+    .select({ id: itensPedido.id })
+    .from(itensPedido)
+    .innerJoin(pedidos, eq(pedidos.id, itensPedido.pedidoId))
+    .where(eq(pedidos.clienteId, clienteId));
+}
+
 async function pedidosDe(clienteId: number) {
   return db.select().from(pedidos).where(eq(pedidos.clienteId, clienteId));
 }
@@ -103,7 +113,7 @@ describe("createOrder", () => {
     // O produto inexistente é detectado ANTES de gravar qualquer coisa. A transação protege contra falha no meio
     // das gravações (pedido gravado e itens não), o que não dá para simular aqui sem truque.
     const pedidosAntes = (await pedidosDe(aId)).length;
-    const itensAntes = (await db.select().from(itensPedido)).length;
+    const itensAntes = (await itensDe(aId)).length;
 
     await expect(
       createOrder(aId, {
@@ -115,7 +125,7 @@ describe("createOrder", () => {
     ).rejects.toBeInstanceOf(ProdutoInexistenteError);
 
     expect((await pedidosDe(aId)).length).toBe(pedidosAntes);
-    expect((await db.select().from(itensPedido)).length).toBe(itensAntes);
+    expect((await itensDe(aId)).length).toBe(itensAntes);
   });
 
   it("recusa quantidade fora de 1 a 5, produto repetido, lista vazia e tipos errados", async () => {
