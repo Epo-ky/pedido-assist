@@ -19,10 +19,17 @@ export const MAX_MESSAGE_LENGTH = 2000;
 export const MAX_PROVIDER_ATTEMPTS = 3;
 const ESPERA_PADRAO_MS = 500;
 
-const AVISO_CHAMADA_INVALIDA =
-  "Aviso do sistema: a sua última chamada de ferramenta estava malformada e foi recusada. " +
-  "Tente de novo com argumentos válidos (números inteiros positivos para pedido_id, datas como AAAA-MM-DD), " +
-  "ou responda ao cliente sem usar ferramenta.";
+// Com temperature 0, repetir a mesma chamada tende a dar o mesmo erro; por isso o aviso diz O QUE deu errado
+// (o motivo do provedor, ex.: um nome de ferramenta com erro de digitação) e QUAIS ferramentas existem.
+export function avisoChamadaInvalida(tools: ToolDefinition[], motivo?: string): string {
+  return (
+    "Aviso do sistema: a sua última chamada de ferramenta estava malformada e foi recusada." +
+    (motivo ? ` Motivo informado: ${motivo}.` : "") +
+    ` As únicas ferramentas que existem são: ${tools.map((tool) => tool.name).join(", ")}.` +
+    " Tente de novo com o nome exato da ferramenta e argumentos válidos (números inteiros positivos para" +
+    " pedido_id, datas como AAAA-MM-DD), ou responda ao cliente sem usar ferramenta."
+  );
+}
 
 // Às vezes o modelo termina sem escrever nada (nem pedir tool). Nesse caso ele é avisado e tenta de novo,
 // em vez de o cliente receber uma desculpa na primeira falha.
@@ -32,6 +39,10 @@ const AVISO_SEM_RESPOSTA =
   "com base nos resultados das ferramentas, ou diga que não encontrou.";
 
 const RESPOSTA_SEM_CONTEUDO = "Desculpe, não consegui gerar uma resposta. Pode tentar de novo?";
+// Quando o modelo erra a chamada da ferramenta mesmo depois dos avisos. Não é "o Volt está fora do ar": é uma
+// falha desta pergunta, e reformular costuma resolver.
+const RESPOSTA_CONSULTA_FALHOU =
+  "Desculpe, não consegui consultar isso agora. Pode reformular a pergunta ou tentar de novo?";
 const RESPOSTA_LIMITE =
   "Desculpe, não consegui concluir essa consulta. Tente reformular a pergunta de outro jeito.";
 
@@ -101,14 +112,23 @@ export async function runChat(params: {
 
   for (let iteracao = 1; iteracao <= MAX_ITERATIONS; iteracao++) {
     const inicio = Date.now();
-    const resposta = await completeWithRecovery({
-      provider,
-      messages,
-      tools: toolDefinitions,
-      iteracao,
-      log,
-      retryDelayMs,
-    });
+    let resposta: ProviderResponse;
+    try {
+      resposta = await completeWithRecovery({
+        provider,
+        messages,
+        tools: toolDefinitions,
+        iteracao,
+        log,
+        retryDelayMs,
+      });
+    } catch (error) {
+      // O modelo insistiu em chamadas inválidas: devolve uma mensagem honesta em vez de um erro de servidor.
+      if (error instanceof LlmProviderError && error.kind === "invalid_tool_call") {
+        return { reply: RESPOSTA_CONSULTA_FALHOU, usage, toolCalls, hitIterationLimit: false, answered: false };
+      }
+      throw error;
+    }
 
     usage.inputTokens += resposta.usage.inputTokens;
     usage.outputTokens += resposta.usage.outputTokens;
@@ -175,7 +195,7 @@ async function completeWithRecovery(params: {
       log({ evento: "llm_erro", iteracao, tentativa, tipo: error.kind });
 
       if (error.kind === "invalid_tool_call") {
-        messages.push({ role: "system", content: AVISO_CHAMADA_INVALIDA });
+        messages.push({ role: "system", content: avisoChamadaInvalida(tools, error.detail) });
       } else {
         await new Promise((resolve) => setTimeout(resolve, retryDelayMs * tentativa));
       }

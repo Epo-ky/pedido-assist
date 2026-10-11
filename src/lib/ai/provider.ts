@@ -41,12 +41,17 @@ export interface LlmProvider {
 export type LlmProviderErrorKind = "rate_limit" | "unavailable" | "invalid_tool_call" | "rejected";
 
 export class LlmProviderError extends Error {
+  readonly detail?: string;
+
   constructor(
     readonly kind: LlmProviderErrorKind,
     message: string,
-    options?: { cause?: unknown },
+    // "detail" é o motivo que o provedor deu, em texto curto (ex.: "chamou uma ferramenta que não existe"). O loop o
+    // repassa ao modelo para ele se corrigir. Nunca vai para o cliente.
+    options?: { cause?: unknown; detail?: string },
   ) {
-    super(message, options);
+    super(message, options?.cause === undefined ? undefined : { cause: options.cause });
+    this.detail = options?.detail;
     this.name = "LlmProviderError";
   }
 }

@@ -297,14 +297,34 @@ describe("recuperação de falhas do provedor", () => {
     expect(logs).toContainEqual({ evento: "llm_erro", iteracao: 1, tentativa: 1, tipo: "invalid_tool_call" });
   });
 
-  it("desiste depois de MAX_PROVIDER_ATTEMPTS chamadas malformadas seguidas", async () => {
+  it("depois de MAX_PROVIDER_ATTEMPTS chamadas malformadas, responde com honestidade e sem erro de servidor", async () => {
     const { provider, recebido } = modeloInstavel(falha("invalid_tool_call"));
     const { log } = registrarLogs();
 
-    await expect(
-      runChat({ provider, clienteId: anaId, history: [], message: "oi", log, retryDelayMs: 0 }),
-    ).rejects.toMatchObject({ kind: "invalid_tool_call" });
+    const resultado = await runChat({ provider, clienteId: anaId, history: [], message: "oi", log, retryDelayMs: 0 });
+
     expect(recebido).toHaveLength(MAX_PROVIDER_ATTEMPTS);
+    expect(resultado.reply).toContain("não consegui consultar isso agora");
+    expect(resultado.reply).not.toContain("indisponível");
+    // Uma desculpa nossa nunca vai para o histórico.
+    expect(resultado.answered).toBe(false);
+  });
+
+  it("o aviso ao modelo diz o motivo exato do provedor e quais ferramentas existem (caso real: 'rastrar_entrega')", async () => {
+    const motivo = "attempted to call tool 'rastrar_entrega' which was not in request.tools";
+    const { provider, recebido } = modeloInstavel(
+      new LlmProviderError("invalid_tool_call", "400", { detail: motivo }),
+      texto("Corrigido."),
+    );
+    const { log } = registrarLogs();
+
+    await runChat({ provider, clienteId: anaId, history: [], message: "oi", log, retryDelayMs: 0 });
+
+    const aviso = recebido[1].find((m) => m.role === "system" && m.content.includes("malformada"));
+    expect(aviso?.content).toContain("rastrar_entrega");
+    expect(aviso?.content).toContain("rastrear_entrega");
+    expect(aviso?.content).toContain("listar_pedidos");
+    expect(aviso?.content).toContain("detalhe_pedido");
   });
 
   it("tenta de novo quando o serviço fica indisponível por um instante", async () => {

@@ -40,6 +40,13 @@ export function classificarErro(error: InstanceType<typeof Groq.APIError>): LlmP
   return "rejected";
 }
 
+// O motivo que o Groq deu, em texto curto, para o loop repassar ao modelo (ex.: "attempted to call tool
+// 'rastrar_entrega' which was not in request.tools"). É texto gerado pelo modelo e pelo provedor, não do cliente.
+export function detalheDoErro(error: InstanceType<typeof Groq.APIError>): string | undefined {
+  const mensagem = (error.error as { error?: { message?: string } } | undefined)?.error?.message;
+  return mensagem ? mensagem.replace(/\s+/g, " ").trim().slice(0, 300) : undefined;
+}
+
 function toGroqMessage(message: ChatMessage): GroqMessage {
   switch (message.role) {
     case "assistant":
@@ -92,6 +99,7 @@ export const groqProvider: LlmProvider = {
       if (error instanceof Groq.APIError) {
         throw new LlmProviderError(classificarErro(error), `Groq respondeu com erro (${error.status ?? "sem status"})`, {
           cause: error,
+          detail: detalheDoErro(error),
         });
       }
       throw error;

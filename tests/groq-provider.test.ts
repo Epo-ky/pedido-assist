@@ -1,6 +1,6 @@
 import Groq from "groq-sdk";
 import { describe, expect, it } from "vitest";
-import { classificarErro } from "@/lib/ai/groq-provider";
+import { classificarErro, detalheDoErro } from "@/lib/ai/groq-provider";
 
 function erroDoGroq(status: number | undefined, corpo?: object) {
   return Groq.APIError.generate(status, corpo, `erro ${status}`, new Headers());
@@ -30,5 +30,33 @@ describe("classificarErro (Groq -> tipo neutro)", () => {
     expect(classificarErro(erroDoGroq(503, { error: { message: "indisponível" } }))).toBe("unavailable");
     expect(classificarErro(erroDoGroq(500))).toBe("unavailable");
     expect(classificarErro(erroDoGroq(undefined))).toBe("unavailable");
+  });
+});
+
+describe("detalheDoErro (o motivo que o Groq deu)", () => {
+  it("extrai a mensagem do provedor, como no caso real de uma ferramenta com nome errado", () => {
+    const corpo = {
+      error: {
+        code: "tool_use_failed",
+        message: "Tool call validation failed: attempted to call tool 'rastrar_entrega' which was not in request.tools",
+      },
+    };
+
+    expect(detalheDoErro(erroDoGroq(400, corpo))).toContain("rastrar_entrega");
+  });
+
+  it("junta espaços e quebras de linha e corta mensagens longas", () => {
+    const longa = `muito
+   espaço ${"x".repeat(500)}`;
+
+    const detalhe = detalheDoErro(erroDoGroq(400, { error: { message: longa } }));
+
+    expect(detalhe?.startsWith("muito espaço")).toBe(true);
+    expect(detalhe?.length).toBe(300);
+  });
+
+  it("devolve undefined quando o provedor não mandou mensagem", () => {
+    expect(detalheDoErro(erroDoGroq(500))).toBeUndefined();
+    expect(detalheDoErro(erroDoGroq(400, { error: {} }))).toBeUndefined();
   });
 });
