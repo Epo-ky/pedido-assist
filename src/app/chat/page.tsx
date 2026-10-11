@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { listPendingActions } from "@/lib/actions";
 import { getSession } from "@/lib/auth/session";
 import { loadHistory } from "@/lib/chat-history";
 import { db } from "@/lib/db";
@@ -28,7 +29,11 @@ export default async function ChatPage() {
   return (
     <main className={styles.pagina}>
       <Cabecalho nome={cliente.nome} atual="chat" />
-      <Chat nome={cliente.nome.split(" ")[0]} historicoInicial={await loadHistory(sessao.clienteId)} />
+      <Chat
+        nome={cliente.nome.split(" ")[0]}
+        historicoInicial={await loadHistory(sessao.clienteId)}
+        propostasIniciais={await listPendingActions(sessao.clienteId)}
+      />
     </main>
   );
 }
