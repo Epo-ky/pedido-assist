@@ -12,3 +12,6 @@ export const LOGIN_POR_IP: RateLimitRule = { max: 30, janelaSegundos: 15 * 60 };
 
 // Cadastro: segura a criação de contas em massa (que também furaria o limite do chat por cliente).
 export const CADASTRO_POR_IP: RateLimitRule = { max: 5, janelaSegundos: 60 * 60 };
+
+// Compras na loja: cada compra grava um pedido no banco, então sem limite alguém poderia encher o banco gratuito.
+export const COMPRA_POR_CLIENTE: RateLimitRule = { max: 5, janelaSegundos: 60 * 60 };
