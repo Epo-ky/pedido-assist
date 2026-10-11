@@ -6,6 +6,7 @@ import { clientes, produtos } from "@/lib/db/schema";
 import { formatBRL } from "@/lib/money";
 import { iconeDoProduto } from "@/lib/product-icon";
 import { Cabecalho } from "../cabecalho";
+import { Comprar } from "./comprar";
 import styles from "./loja.module.css";
 
 const LARGURA = 960;
@@ -47,6 +48,7 @@ export default async function LojaPage() {
               </span>
               <h2 className={styles.nome}>{produto.nome}</h2>
               <p className={styles.preco}>{formatBRL(produto.preco)}</p>
+              <Comprar produtoId={produto.id} nome={produto.nome} />
             </li>
           ))}
         </ul>

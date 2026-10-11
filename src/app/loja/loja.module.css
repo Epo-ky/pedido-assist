@@ -65,3 +65,60 @@
     padding-bottom: 68px;
   }
 }
+
+.compra {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.controles {
+  display: flex;
+  gap: 8px;
+}
+
+.controles select {
+  padding: 8px 10px;
+  font-size: 0.95rem;
+  color: inherit;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--foreground) 30%, transparent);
+  border-radius: 8px;
+}
+
+.controles select option {
+  color: #171717;
+}
+
+.controles button {
+  flex: 1;
+  padding: 9px 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--background);
+  background: var(--foreground);
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.controles button:disabled,
+.controles select:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.sucesso,
+.erro {
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.sucesso a {
+  text-decoration: underline;
+}
+
+.erro {
+  color: #d93025;
+}
