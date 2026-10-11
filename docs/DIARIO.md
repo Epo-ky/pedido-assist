@@ -472,3 +472,28 @@ Cadastro (2f); trocar o nome para Voltz e fazer o fundo; depois a Fase 3 (tools)
 2. 7d: o Volt propõe o cancelamento de um pedido pendente e quem executa é o clique de confirmação do cliente,
    validado pelo servidor; o modelo nunca cancela sozinho.
 3. 7e: ajustar nomes ("De" em maiúscula), testes de segurança das ações e o prompt.
+
+## 2026-10-10 (manhã) — Fase 7, passo 7b: a vitrine da loja
+
+### O que foi feito
+- Página `/loja` com os produtos do banco em cartões (ícone, nome e preço em reais), só para quem está logado.
+  Cabeçalho compartilhado com a navegação entre Loja e Chat, o nome e o botão de sair. Ainda sem comprar.
+- Conferi no navegador, no PC e no celular, e depois em produção (login obrigatório, 8 produtos vindos do Neon).
+
+### O que deu errado
+- No celular, o botão flutuante de tema ficava em cima do campo de mensagem e do botão Enviar do chat. Achei
+  olhando o print da tela, e não pelos testes. Corrigi reservando uma faixa livre embaixo no celular.
+- O `proxy.ts`, que decide quem entra em /chat e /loja, nunca teve teste automatizado: só verificação por curl,
+  feita à mão. Escrevi os testes antes de dar o passo por fechado e provei com uma quebra de propósito (esquecer de
+  proteger /loja deixa dois testes vermelhos).
+- Uma checagem de preços com `grep` no shell veio vazia por causa do `$` do "R$"; era problema do comando, e o print
+  mostrava os preços certos.
+
+### Decisões
+- A loja exige login (como o chat): comprar vai precisar da sessão, e fica um fluxo só.
+- Não há fotos dos produtos: cada cartão usa um ícone escolhido pelo nome, com um genérico para produto novo.
+- `formatBRL` é só para exibir; totais continuam sem número flutuante.
+
+### Próximos passos
+1. 7c: comprar (cria o pedido; preço e total sempre do banco, com limite de quantidade e de compras por hora).
+2. 7d: cancelar pelo Volt com confirmação por clique, validada pelo servidor.
