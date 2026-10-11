@@ -82,7 +82,8 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ resposta: resultado.reply });
+    // As propostas de ação (ex.: cancelar um pedido) vão para a tela, que mostra o botão de confirmar.
+    return NextResponse.json({ resposta: resultado.reply, acoes: resultado.acoes });
   } catch (error) {
     if (error instanceof LlmProviderError && error.kind === "rate_limit") {
       return NextResponse.json(

@@ -15,3 +15,6 @@ export const CADASTRO_POR_IP: RateLimitRule = { max: 5, janelaSegundos: 60 * 60 
 
 // Compras na loja: cada compra grava um pedido no banco, então sem limite alguém poderia encher o banco gratuito.
 export const COMPRA_POR_CLIENTE: RateLimitRule = { max: 5, janelaSegundos: 60 * 60 };
+
+// Confirmar ou recusar propostas de ação: é um clique de gente, então 30 por hora sobra, e evita tentativas em massa.
+export const ACAO_POR_CLIENTE: RateLimitRule = { max: 30, janelaSegundos: 60 * 60 };

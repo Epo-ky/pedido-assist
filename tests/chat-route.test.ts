@@ -82,9 +82,25 @@ describe("POST /api/chat", () => {
     );
 
     expect(resposta.status).toBe(200);
-    expect(await resposta.json()).toEqual({ resposta: "Você tem 8 pedidos." });
+    expect(await resposta.json()).toEqual({ resposta: "Você tem 8 pedidos.", acoes: [] });
     expect(runChatMock).toHaveBeenCalledOnce();
     expect(runChatMock.mock.calls[0][0]).toMatchObject({ clienteId: 1, message: "meus pedidos" });
+  });
+
+  it("devolve à tela as propostas de ação que o Volt criou (o botão de confirmar)", async () => {
+    getSessionMock.mockResolvedValue({ clienteId: 1 });
+    const proposta = {
+      id: "11111111-1111-4111-8111-111111111111",
+      tipo: "cancelar_pedido" as const,
+      pedidoId: 6,
+      total: "159.90",
+      expiraEm: "2026-10-11T12:10:00.000Z",
+    };
+    runChatMock.mockResolvedValue({ ...RESULTADO, reply: "Preparei o cancelamento.", acoes: [proposta] });
+
+    const resposta = await POST(requisicao({ message: "cancela o pedido 6" }));
+
+    expect(await resposta.json()).toEqual({ resposta: "Preparei o cancelamento.", acoes: [proposta] });
   });
 
   it("passa o nome do cliente lido do BANCO, ignorando um nome enviado no corpo", async () => {
@@ -204,7 +220,7 @@ describe("POST /api/chat", () => {
     const resposta = await POST(requisicao({ message: "oi" }));
 
     expect(resposta.status).toBe(200);
-    expect(await resposta.json()).toEqual({ resposta: "Desculpe, não consegui gerar uma resposta." });
+    expect(await resposta.json()).toEqual({ resposta: "Desculpe, não consegui gerar uma resposta.", acoes: [] });
     expect(saveExchangeMock).not.toHaveBeenCalled();
   });
 
@@ -217,7 +233,7 @@ describe("POST /api/chat", () => {
     const resposta = await POST(requisicao({ message: "oi" }));
 
     expect(resposta.status).toBe(200);
-    expect(await resposta.json()).toEqual({ resposta: "Você tem 8 pedidos." });
+    expect(await resposta.json()).toEqual({ resposta: "Você tem 8 pedidos.", acoes: [] });
   });
 
   it("não guarda histórico de uma requisição bloqueada pelo limite", async () => {
