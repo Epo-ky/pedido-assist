@@ -497,3 +497,34 @@ Cadastro (2f); trocar o nome para Voltz e fazer o fundo; depois a Fase 3 (tools)
 ### Próximos passos
 1. 7c: comprar (cria o pedido; preço e total sempre do banco, com limite de quantidade e de compras por hora).
 2. 7d: cancelar pelo Volt com confirmação por clique, validada pelo servidor.
+
+## 2026-10-11 (madrugada) — Fase 7, passo 7c: comprar na loja
+
+### O que foi feito
+- `createOrder`: cria um pedido pendente para o cliente da sessão, com preço e total sempre lidos do banco, somados em
+  centavos inteiros, numa transação. Rota `POST /api/pedidos` (limite de 5 compras por hora) e o botão Comprar, com
+  seletor de quantidade (1 a 5), em cada cartão da vitrine. O Volt já enxerga o pedido novo. Testei no navegador e em
+  produção; os pedidos de teste foram apagados do banco local e do Neon.
+
+### O que deu errado
+- Escrevi dois testes que prometiam mais do que provavam: o do "ponto flutuante" (o `toFixed(2)` final esconderia o erro
+  mesmo sem a soma em centavos) e o do "não deixa pedido pela metade" (o produto inexistente é detectado ANTES de gravar
+  qualquer coisa, então ele passaria mesmo sem a transação). Percebi ao reler, e mudei os nomes para dizer só o que
+  de fato provam. A soma em centavos e a transação continuam sendo a prática certa, mas não são testáveis por esses casos.
+- No teste ponta a ponta, a pergunta "esse pedido já foi enviado?" voltou "Volt indisponível". A causa estava no log: o
+  modelo chamou uma ferramenta chamada `rastrar_entrega` (erro de digitação) e o Groq recusou o nome. A recuperação
+  tentou 3 vezes com o mesmo aviso genérico, e como o modelo roda com temperature 0, repetiu o mesmo erro.
+  Corrigi: o aviso passa a dizer o motivo exato do provedor e a listar as ferramentas que existem; se ainda falhar, o
+  cliente vê "não consegui consultar isso agora, reformule" (e não "indisponível"), sem ir para o histórico.
+- Eu NÃO consegui reproduzir a falha depois (3 rodadas seguidas deram certo): ela é intermitente. O que está provado
+  são os testes da recuperação, e não que ela nunca mais aconteça.
+
+### Decisões
+- Do navegador só vêm QUAIS produtos e QUANTAS unidades; preço, total, status e cliente forjados são descartados
+  (testado, e conferido em produção com um preço de R$ 0,01 forjado: o total saiu R$ 899,90 e o status, pendente).
+- Limite de 5 compras por hora por cliente, para ninguém encher o banco gratuito; pedido inválido não gasta o limite.
+- O pagamento fica simulado: o pedido nasce pendente e não há como pagar.
+
+### Próximo
+7d: o Volt propõe o cancelamento de um pedido pendente, e quem cancela é o clique de confirmação do cliente, validado
+pelo servidor; o modelo nunca cancela sozinho.
