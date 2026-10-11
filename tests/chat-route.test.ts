@@ -36,6 +36,7 @@ const RESULTADO = {
   toolCalls: 1,
   hitIterationLimit: false,
   answered: true,
+  acoes: [],
 };
 
 const LIBERADO = { allowed: true, contagem: 1, retryAfterSeconds: 3600 };

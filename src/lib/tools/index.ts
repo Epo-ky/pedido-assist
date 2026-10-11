@@ -1,15 +1,21 @@
 import { z } from "zod";
+import type { AcaoProposta } from "@/lib/actions";
 import type { ToolDefinition } from "@/lib/ai/provider";
 import { formatDateTimeInBrazil } from "@/lib/dates";
 import { listOrders, listOrdersArgs } from "./list-orders";
 import { orderDetail, orderDetailArgs } from "./order-detail";
+import { proposeCancelArgs, proposeCancelTool } from "./propose-cancel";
 import { trackDelivery, trackDeliveryArgs } from "./track-delivery";
+
+// Efeitos de uma tool que NÃO vão para o modelo, e sim para a tela (ex.: o botão de confirmar um cancelamento).
+// Cada conversa (cada chamada do runChat) tem o seu.
+export type ToolContext = { acoes: AcaoProposta[] };
 
 type RegisteredTool = {
   description: string;
   schema: z.ZodType;
   // clienteId vem sempre da SESSÃO e é um parâmetro à parte; os argumentos do modelo nunca o carregam.
-  run: (clienteId: number, args: unknown) => Promise<unknown>;
+  run: (clienteId: number, args: unknown, ctx: ToolContext) => Promise<unknown>;
 };
 
 const registry: Record<string, RegisteredTool> = {
@@ -36,6 +42,15 @@ const registry: Record<string, RegisteredTool> = {
       "Se o pedido não existir ou não for do cliente, devolve encontrado: false.",
     schema: trackDeliveryArgs,
     run: trackDelivery,
+  },
+  propor_cancelamento: {
+    description:
+      "Prepara o cancelamento de um pedido PENDENTE do cliente logado. NÃO cancela: o cliente precisa confirmar num " +
+      "botão que aparece na tela. Use só quando o cliente pedir para cancelar um pedido e tiver dito qual. " +
+      "Se o pedido não for pendente, devolve proposta_criada: false com o motivo; se não existir ou não for do " +
+      "cliente, devolve encontrado: false.",
+    schema: proposeCancelArgs,
+    run: proposeCancelTool,
   },
 };
 
@@ -105,6 +120,7 @@ export async function executeTool(
   clienteId: number,
   name: string,
   rawArguments: string,
+  ctx: ToolContext = { acoes: [] },
 ): Promise<ToolExecution> {
   const tool = registry[name];
   if (!tool) return erro(`A ferramenta "${name}" não existe.`);
@@ -118,7 +134,7 @@ export async function executeTool(
   }
 
   try {
-    const resultado = await tool.run(clienteId, args);
+    const resultado = await tool.run(clienteId, args, ctx);
     // Vazio (null ou lista vazia) vira um sinal explícito, para o modelo dizer "não encontrei" em vez de inventar.
     const vazio = resultado == null || (Array.isArray(resultado) && resultado.length === 0);
     return { content: serializar(vazio ? { encontrado: false } : resultado), isError: false };

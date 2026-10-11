@@ -26,10 +26,11 @@ afterAll(async () => {
 });
 
 describe("definições das tools enviadas ao modelo", () => {
-  it("expõe as três tools com descrição", () => {
+  it("expõe as quatro tools com descrição", () => {
     expect(toolDefinitions.map((t) => t.name).sort()).toEqual([
       "detalhe_pedido",
       "listar_pedidos",
+      "propor_cancelamento",
       "rastrear_entrega",
     ]);
     for (const tool of toolDefinitions) expect(tool.description.length).toBeGreaterThan(20);

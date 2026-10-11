@@ -23,6 +23,22 @@ describe("findFalsePromises", () => {
     expect(findFalsePromises("Já registrei a sua solicitação.")).not.toEqual([]);
   });
 
+  it("pega o Volt afirmando que cancelou (ele só propõe; quem cancela é o clique do cliente)", () => {
+    expect(findFalsePromises("Pronto, cancelei o seu pedido 6.")).toContain(
+      "afirma ter cancelado o pedido, que só o cliente confirma",
+    );
+    expect(findFalsePromises("O pedido foi cancelado com sucesso.")).not.toEqual([]);
+    expect(findFalsePromises("O cancelamento foi concluído.")).not.toEqual([]);
+  });
+
+  it("não marca a descrição do cancelamento como proposta nem o status de um pedido já cancelado", () => {
+    expect(findFalsePromises("O pedido 7 foi cancelado em 18/09/2026.")).toEqual([]);
+    expect(findFalsePromises("O pedido 7 está com status cancelado.")).toEqual([]);
+    expect(
+      findFalsePromises("Preparei o cancelamento do pedido 6. Ele só será cancelado se você confirmar no botão."),
+    ).toEqual([]);
+  });
+
   it("não marca recusas honestas nem respostas normais", () => {
     const honestas = [
       "Desculpe, mas eu só consigo consultar pedidos. Não posso alterar valores nem abrir solicitações.",

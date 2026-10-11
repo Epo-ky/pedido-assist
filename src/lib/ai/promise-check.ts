@@ -17,6 +17,12 @@ const PADROES: { descricao: string; regex: RegExp }[] = [
     regex: /(?<!n[aã]o )(?<!n[aã]o consigo )(posso|vou|irei) (registrar|abrir|encaminhar|criar|enviar|solicitar|providenciar)/i,
   },
   {
+    // O Volt NUNCA cancela: ele só propõe, e o cliente confirma no botão. "Cancelei" seria mentira.
+    // (Só a 1ª pessoa: "o pedido 7 foi cancelado em 18/09" é um status e está certo.)
+    descricao: "afirma ter cancelado o pedido, que só o cliente confirma",
+    regex: /\b(cancelei|cancelamos)\b|cancelado com sucesso|cancelamento (foi )?(conclu[ií]do|realizado|efetuado)/i,
+  },
+  {
     descricao: "afirma ter feito uma ação que não existe",
     regex: /\b(registrei|abri|encaminhei|criei|solicitei|providenciei|enviei)\b/i,
   },

@@ -1,4 +1,5 @@
-import { executeTool, toolDefinitions } from "@/lib/tools";
+import type { AcaoProposta } from "@/lib/actions";
+import { executeTool, type ToolContext, toolDefinitions } from "@/lib/tools";
 import {
   type ChatMessage,
   type LlmProvider,
@@ -61,6 +62,9 @@ export type ChatResult = {
   // false quando "reply" é uma mensagem de desculpa nossa (modelo sem resposta ou limite de voltas).
   // Respostas assim não devem ir para o histórico: confundiriam as próximas respostas do modelo.
   answered: boolean;
+  // Propostas de ação que o assistente criou nesta conversa (ex.: cancelar um pedido). A tela mostra um botão
+  // de confirmar para cada uma; o modelo nunca as executa.
+  acoes: AcaoProposta[];
 };
 
 function logPadrao(entry: ChatLogEntry) {
@@ -107,6 +111,7 @@ export async function runChat(params: {
   ];
 
   const usage = { inputTokens: 0, outputTokens: 0 };
+  const contexto: ToolContext = { acoes: [] };
   let toolCalls = 0;
   let retriesSemResposta = 0;
 
@@ -125,7 +130,7 @@ export async function runChat(params: {
     } catch (error) {
       // O modelo insistiu em chamadas inválidas: devolve uma mensagem honesta em vez de um erro de servidor.
       if (error instanceof LlmProviderError && error.kind === "invalid_tool_call") {
-        return { reply: RESPOSTA_CONSULTA_FALHOU, usage, toolCalls, hitIterationLimit: false, answered: false };
+        return { reply: RESPOSTA_CONSULTA_FALHOU, usage, toolCalls, hitIterationLimit: false, answered: false, acoes: contexto.acoes };
       }
       throw error;
     }
@@ -145,7 +150,7 @@ export async function runChat(params: {
       const texto = toPlainText(resposta.content ?? "").trim();
 
       if (texto) {
-        return { reply: texto, usage, toolCalls, hitIterationLimit: false, answered: true };
+        return { reply: texto, usage, toolCalls, hitIterationLimit: false, answered: true, acoes: contexto.acoes };
       }
 
       if (retriesSemResposta < MAX_RETRIES_SEM_RESPOSTA) {
@@ -155,18 +160,18 @@ export async function runChat(params: {
         continue;
       }
 
-      return { reply: RESPOSTA_SEM_CONTEUDO, usage, toolCalls, hitIterationLimit: false, answered: false };
+      return { reply: RESPOSTA_SEM_CONTEUDO, usage, toolCalls, hitIterationLimit: false, answered: false, acoes: contexto.acoes };
     }
 
     messages.push({ role: "assistant", content: resposta.content, toolCalls: resposta.toolCalls });
 
     for (const chamada of resposta.toolCalls) {
-      messages.push(await executarChamada(clienteId, chamada, log));
+      messages.push(await executarChamada(clienteId, chamada, log, contexto));
       toolCalls++;
     }
   }
 
-  return { reply: RESPOSTA_LIMITE, usage, toolCalls, hitIterationLimit: true, answered: false };
+  return { reply: RESPOSTA_LIMITE, usage, toolCalls, hitIterationLimit: true, answered: false, acoes: contexto.acoes };
 }
 
 // Chama o modelo e se recupera das falhas em que insistir ajuda. Com temperature 0, repetir a MESMA chamada
@@ -207,9 +212,10 @@ async function executarChamada(
   clienteId: number,
   chamada: ToolCall,
   log: (entry: ChatLogEntry) => void,
+  contexto: ToolContext,
 ): Promise<ChatMessage> {
   const inicio = Date.now();
-  const resultado = await executeTool(clienteId, chamada.name, chamada.arguments);
+  const resultado = await executeTool(clienteId, chamada.name, chamada.arguments, contexto);
 
   log({
     evento: "tool",
