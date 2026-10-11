@@ -3,7 +3,7 @@ import { formatBRL } from "@/lib/money";
 import { iconeDoProduto } from "@/lib/product-icon";
 
 // O formatador do navegador usa um espaço "sem quebra" depois do R$; nos testes comparamos com espaço comum.
-const semEspacoEspecial = (texto: string) => texto.replace(/ /g, " ");
+const semEspacoEspecial = (texto: string) => texto.replace(/\u00a0/g, " ");
 
 describe("formatBRL", () => {
   it("formata o texto do banco em reais, com vírgula e separador de milhar", () => {
