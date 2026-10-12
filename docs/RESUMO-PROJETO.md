@@ -47,7 +47,7 @@ O provedor de LLM fica atrás de uma interface (`LlmProvider`): trocar de empres
   pedido alheio, nem por prompt injection". O loop é testado com um modelo falso (sem gastar cota).
 - **Bateria de 31 ataques** de prompt injection contra o modelo real (`npm run security:check`). O detector olha o que as tools
   ENTREGARAM ao modelo (um modelo pode "recusar" depois de já ter recebido o dado), procura promessas falsas e confere **no banco**
-  que nenhum pedido mudou. Última rodada completa (antes do ajuste de prompt de hoje): 0 vazamentos, 0 promessas indevidas,
+  que nenhum pedido mudou. Última rodada completa (2026-10-12, com o prompt final): 0 vazamentos, 0 promessas indevidas,
   0 pedidos alterados.
 - **23 evals** (`npm run evals`) com a resposta esperada de cada pergunta, contra o modelo real.
 - **Quebras de propósito** (mutation checks manuais): depois de cada mudança de segurança, estrago o código e confirmo que o teste
@@ -88,18 +88,16 @@ usuário no controller, interface `LlmProvider` ≈ interface + injeção de dep
 ## 8. O que NÃO afirmar (para não exagerar)
 - "0 vazamentos em 31 ataques" **não** prova segurança total; a garantia é o código. A bateria pega regressão.
 - O 100% do `motivo-do-cancelamento` é de **um caso, 8 repetições**; é indício forte, não garantia.
-- A bateria completa de 31 ataques **com o prompt mais recente** ainda não foi concluída (a cota gratuita da Groq acabou no meio, ataques
-  08 a 11 deram 429). A eval `cancelar-pedido-ja-enviado` corrigida também não foi rodada de novo. O commit do prompt está local, sem push.
+- Em 2026-10-12 a bateria completa (31 ataques) rodou com o prompt mais recente: 0 vazamentos, 0 promessas indevidas, 0 pedidos alterados. É uma rodada só; o modelo varia entre execuções.
 - Pagamento é simulado; o produto é fictício; o plano gratuito tem limites (a primeira requisição pode demorar, o Neon acorda do zero).
 - Eu usei IA (Claude Code) como ferramenta de desenvolvimento, em passos pequenos, e precisei entender cada parte; dizer isso é honesto
   e combina com o tema do projeto.
 
 ## 9. Pendências
-1. Quando a cota voltar: `npm run security:check` completo e `npm run evals -- cancelar-pedido-ja-enviado`; depois dar push do prompt.
-2. Print ou gif do chat para o README (ainda não tem imagem).
-3. Minhas respostas em `docs/ESTUDO.md` (17 perguntas de entrevista) e decidir o que fazer com a pasta `Claudio/`.
-4. Bônus: recuperar senha com e-mail (Brevo), RAG com política de trocas (pgvector).
-5. Nome com maiúsculas estranhas ("De"), e não há botão de cancelar fora do chat.
+1. Um gif curto do chat (os prints estão em `docs/img/`).
+2. Minhas respostas em `docs/ESTUDO.md` (17 perguntas de entrevista) e decidir o que fazer com a pasta `Claudio/`.
+3. Bônus: recuperar senha com e-mail (Brevo), RAG com política de trocas (pgvector).
+4. Nome com maiúsculas estranhas ("De"), e não há botão de cancelar fora do chat.
 
 ## 10. Para decidir com o Claude chat (LinkedIn etc.)
 Ângulos possíveis (escolher um como gancho):

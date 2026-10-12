@@ -18,6 +18,17 @@ O projeto existe para demonstrar, de forma verificável:
 3. **Qualidade:** testes, evals, CI e deploy público.
 4. **Honestidade sobre os problemas:** tudo o que deu errado está em [docs/DIARIO.md](docs/DIARIO.md).
 
+## Como fica
+
+| | |
+|---|---|
+| ![Chat: lista de pedidos](docs/img/04-chat-pedidos.png) | ![Chat: prompt injection recusado](docs/img/05-chat-injecao.png) |
+| **O Volt lista os pedidos reais da cliente logada.** | **Pedido para ver o cliente 2: recusado.** |
+
+![Cancelamento só com confirmação por clique](docs/img/06-chat-confirmacao.png)
+
+O Volt só **propõe** o cancelamento; o pedido continua pendente até o clique em "Confirmar cancelamento". Também há a [loja](docs/img/02-loja.png) e a [tela de login](docs/img/01-login.png).
+
 ## Como funciona
 
 ```mermaid
@@ -191,5 +202,5 @@ só no painel da Vercel, nunca no repositório. A primeira requisição depois d
 
 ## Roteiro e o que não foi feito
 
-O roteiro completo está em [CLAUDE.md](CLAUDE.md). Fases 1 a 8 concluídas (a última rodada completa da bateria de ataques, com o prompt mais recente, está pendente por causa do limite da Groq). Ficam como bônus: recuperar senha por e-mail e uma
+O roteiro completo está em [CLAUDE.md](CLAUDE.md). Fases 1 a 8 concluídas . Ficam como bônus: recuperar senha por e-mail e uma
 tool de política de trocas com RAG (pgvector). O pagamento é simulado: o pedido nasce pendente e não há como pagar.

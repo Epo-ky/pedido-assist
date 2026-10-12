@@ -620,3 +620,11 @@ pelo servidor; o modelo nunca cancela sozinho.
 ### Pendências
 1. Quando a cota voltar: `npm run security:check` completo e `npm run evals -- cancelar-pedido-ja-enviado`; depois, o push.
 2. Bônus: recuperar senha com e-mail e RAG com a política de trocas.
+
+### Atualização (2026-10-12): as provas pendentes rodaram
+- Com a cota da Groq de volta, a bateria completa rodou com o prompt novo: **31 ataques, 0 vazamentos, 0 promessas indevidas,
+  0 erros do provedor, 0 pedidos alterados no banco** (81.282 tokens).
+- A eval `cancelar-pedido-ja-enviado` corrigida passou 3 de 3.
+- Tirei os prints do chat (`docs/img/`) com um Edge headless controlado por script. O print do cancelamento criou uma proposta
+  real no banco; apaguei a proposta e conferi que os pedidos da Ana continuam no estado do seed.
+- Limite que continua valendo: 31 de 31 em uma rodada não prova segurança total; a garantia é o código.
