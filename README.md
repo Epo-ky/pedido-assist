@@ -6,6 +6,8 @@
 
 > Projeto de portfólio chamado `pedido-assist` no repositório. **Voltz** é a loja fictícia e **Volt** é o assistente.
 
+<p align="center"><img src="docs/img/06-chat-confirmacao.png" alt="Volt propõe o cancelamento e o cliente confirma com um clique" width="820"></p>
+
 O Volt é um assistente de pedidos com IA para a Voltz, uma loja fictícia de eletrônicos. O cliente faz login, compra na
 vitrine e conversa com um assistente que responde dúvidas sobre **os próprios pedidos**, usando dados reais do PostgreSQL por
 meio de *function calling* (tool use). O Volt também **age**: ele propõe o cancelamento de um pedido pendente, mas quem cancela
@@ -20,14 +22,18 @@ O projeto existe para demonstrar, de forma verificável:
 
 ## Como fica
 
-| | |
-|---|---|
-| ![Chat: lista de pedidos](docs/img/04-chat-pedidos.png) | ![Chat: prompt injection recusado](docs/img/05-chat-injecao.png) |
-| **O Volt lista os pedidos reais da cliente logada.** | **Pedido para ver o cliente 2: recusado.** |
+<table>
+<tr>
+<td width="50%"><img src="docs/img/04-chat-pedidos.png" alt="Chat: lista de pedidos"><br><sub>O Volt lista os pedidos reais da cliente logada.</sub></td>
+<td width="50%"><img src="docs/img/05-chat-injecao.png" alt="Chat: prompt injection recusado"><br><sub>Pedido para ver os pedidos do cliente 2: recusado.</sub></td>
+</tr>
+<tr>
+<td><img src="docs/img/02-loja.png" alt="Loja"><br><sub>Loja: o preço e o total vêm sempre do banco.</sub></td>
+<td><img src="docs/img/01-login.png" alt="Login"><br><sub>Login e cadastro, com cookie JWT.</sub></td>
+</tr>
+</table>
 
-![Cancelamento só com confirmação por clique](docs/img/06-chat-confirmacao.png)
-
-O Volt só **propõe** o cancelamento; o pedido continua pendente até o clique em "Confirmar cancelamento". Também há a [loja](docs/img/02-loja.png) e a [tela de login](docs/img/01-login.png).
+A imagem do topo mostra o ponto central: o Volt só **propõe** o cancelamento; o pedido continua pendente até o clique em "Confirmar cancelamento".
 
 ## Como funciona
 
